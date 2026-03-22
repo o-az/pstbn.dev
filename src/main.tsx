@@ -39,15 +39,32 @@ app
   .get("/", context => context.redirect("/docs"))
 
 app.post("/", async context => {
-  const body = await context.req.text()
-  if (!body) return context.json({ error: "Empty body" }, 400)
-
+  const rawContentType = context.req.header("content-type") ?? ""
   const language = context.req.query("lang") ?? null
+
+  let body: ArrayBuffer
+  let contentType: string | undefined
+
+  if (rawContentType.includes("multipart/form-data")) {
+    const form = await context.req.parseBody()
+    const file = form["file"]
+    if (!(file instanceof File))
+      return context.json({ error: "Missing 'file' field in multipart body" }, 400)
+    body = await file.arrayBuffer()
+    contentType = file.type || undefined
+  } else {
+    body = await context.req.arrayBuffer()
+    contentType = rawContentType || undefined
+  }
+
+  if (!body.byteLength) return context.json({ error: "Empty body" }, 400)
+
   const paste = await createPaste(
     context.env.PASTE_METADATA,
     context.env.PASTE_CONTENT,
     body,
-    language
+    language,
+    contentType
   )
   const url = new URL(context.req.url)
 
@@ -59,7 +76,10 @@ app.get("/create", async context => {
   if (!raw) return context.json({ error: "Missing content query param" }, 400)
 
   const encoding = context.req.query("encoding")
-  const content = encoding === "base64" ? atob(raw) : raw
+  const content =
+    encoding === "base64"
+      ? Uint8Array.from(atob(raw), c => c.charCodeAt(0)).buffer
+      : new TextEncoder().encode(raw).buffer
   const language = context.req.query("lang") ?? null
   const paste = await createPaste(
     context.env.PASTE_METADATA,
@@ -80,15 +100,21 @@ app.get("/:id", async context => {
 
   if (wantsJSON || wantsText) {
     const id = context.req.param("id")
-    const [content, metadata] = await Promise.all([
+    const [object, metadata] = await Promise.all([
       getPasteContent(context.env.PASTE_CONTENT, id),
       getPasteMetadata(context.env.PASTE_METADATA, id)
     ])
 
-    if (content !== null) {
+    if (object !== null) {
       if (metadata?.language) context.header("X-Language", metadata.language)
-      if (wantsJSON) return context.json({ ...metadata, content })
-      return context.text(content)
+      if (wantsJSON) {
+        const text = await object.text()
+        return context.json({ ...metadata, content: text })
+      }
+      const ct = metadata?.contentType ?? "text/plain; charset=utf-8"
+      return new Response(object.body, {
+        headers: { "content-type": ct }
+      })
     }
   }
   return cli.fetch(context.req.raw)

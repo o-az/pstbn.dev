@@ -10,6 +10,7 @@ const getScalarConfig: ScalarConfig = baseUrl => ({
   theme: "saturn",
   layout: "modern",
   telemetry: false,
+  hideModels: true,
   hideClientButton: true,
   title: packageJSON.name,
   expandAllResponses: true,

@@ -47,7 +47,7 @@ export const cli = Cli.create("pstbn.dev", {
       const paste = await createPaste(
         context.var.kv,
         context.var.r2,
-        content,
+        new TextEncoder().encode(content).buffer,
         context.options.language ?? null
       )
 
@@ -90,15 +90,15 @@ export const cli = Cli.create("pstbn.dev", {
         return metadata
       }
 
-      const content = await getPasteContent(context.var.r2, context.args.id)
-      if (!content) {
+      const object = await getPasteContent(context.var.r2, context.args.id)
+      if (!object) {
         return context.error({
           code: "NOT_FOUND",
           message: `Paste ${context.args.id} not found`,
           retryable: false
         })
       }
-      return { content }
+      return { content: await object.text() }
     }
   })
   .command("list", {

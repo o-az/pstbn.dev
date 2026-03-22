@@ -53,7 +53,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "The paste content as plain text",
+          "description": "The paste content. Use text/plain for text, or application/octet-stream (and image/* types) for binary files.",
           "content": {
             "text/plain": {
               "schema": {
@@ -66,6 +66,31 @@
                 "code": {
                   "value": "const x = 42\nconsole.log(x)"
                 }
+              }
+            },
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File to upload"
+                  }
+                },
+                "required": ["file"]
               }
             }
           }
