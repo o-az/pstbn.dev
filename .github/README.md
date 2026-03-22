@@ -1,3 +1,3 @@
 # pstbn.dev
 
-A light, robust, privacy-oriented pastebin with CLI and HTTP support.
+Agent-first privacy-oriented pastebin service with CLI and HTTP support.

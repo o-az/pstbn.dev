@@ -10,12 +10,10 @@ const devFlagsSchema = z.object({
   VITE_DEVTOOLS: z.prefault(enabledSchema, "false"),
   VITE_ENABLE_INSPECT: z.prefault(enabledSchema, "false"),
   VITE_FORWARD_CONSOLE: z.prefault(enabledSchema, "false"),
-  VITE_LOG_LEVEL: z.union([
-    z.literal("error"),
-    z.literal("info"),
-    z.literal("silent"),
-    z.literal("warn")
-  ])
+  VITE_LOG_LEVEL: z.prefault(
+    z.union([z.literal("error"), z.literal("info"), z.literal("silent"), z.literal("warn")]),
+    "info"
+  )
 })
 
 export default defineConfig(config => {
