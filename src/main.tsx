@@ -30,10 +30,13 @@ app.use(async (context, next) => {
 })
 
 app.get("/health", context => context.text("ok"))
+app
+  .get("/schema", context => context.json(OpenAPISchema))
+  .get("/openapi.json", context => context.json(OpenAPISchema))
 
-app.get("/docs", context => context.html(Docs({ baseUrl: new URL(context.req.url).origin })))
-
-app.get("/schema", context => context.json(OpenAPISchema))
+app
+  .get("/docs", context => context.html(Docs({ baseUrl: new URL(context.req.url).origin })))
+  .get("/", context => context.redirect("/docs"))
 
 app.post("/", async context => {
   const body = await context.req.text()

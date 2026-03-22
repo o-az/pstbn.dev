@@ -6,14 +6,12 @@ import packageJSON from "#package.json" with { type: "json" }
 type ScalarConfig = (baseUrl: string) => Partial<ApiReferenceConfigurationWithMultipleSources>
 
 const getScalarConfig: ScalarConfig = baseUrl => ({
-  hideModels: true,
+  url: "/schema",
+  theme: "saturn",
   layout: "modern",
   telemetry: false,
-  persistAuth: false,
-  url: "/schema",
   hideClientButton: true,
   title: packageJSON.name,
-  mcp: { disabled: true },
   expandAllResponses: true,
   showDeveloperTools: "never",
   documentDownloadType: "json",
