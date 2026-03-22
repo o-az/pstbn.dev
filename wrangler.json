@@ -1,0 +1,35 @@
+{
+  "$schema": "https://esm.sh/wrangler/config-schema.json",
+  "name": "pstbn",
+  "keep_vars": true,
+  "workers_dev": true,
+  "main": "./src/main.tsx",
+  "compatibility_date": "2026-03-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "placement": {
+    "mode": "smart"
+  },
+  "dev": {
+    "port": 6969
+  },
+  "observability": {
+    "enabled": true
+  },
+  "route": {
+    "custom_domain": true,
+    "pattern": "pstbn.dev"
+  },
+  "preview_urls": true,
+  "kv_namespaces": [
+    {
+      "binding": "PASTE_METADATA",
+      "id": "d4063aa2dcc647f6b9335bcf1f8369b0"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "PASTE_CONTENT",
+      "bucket_name": "pstbn-content"
+    }
+  ]
+}

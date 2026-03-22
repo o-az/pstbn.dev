@@ -1,0 +1,343 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "pstbn.dev",
+    "version": "0.0.0",
+    "description": "Agent-first pastebin API. Create, retrieve, and list text pastes with optional language tagging."
+  },
+  "servers": [
+    {
+      "url": "https://pstbn.dev",
+      "description": "Production"
+    },
+    {
+      "url": "https://pstbn.evm.workers.dev",
+      "description": "Development (workers.dev)"
+    },
+    {
+      "url": "http://localhost:{port}",
+      "description": "Local development",
+      "variables": {
+        "port": {
+          "default": "6969"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Pastes",
+      "description": "Create, retrieve, and list pastes"
+    },
+    {
+      "name": "Meta",
+      "description": "Health, documentation, and schema endpoints"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "operationId": "createPasteRaw",
+        "summary": "Create a paste from raw body",
+        "description": "Creates a new paste using the raw request body as content. Optionally specify a language via the `lang` query parameter.",
+        "tags": ["Pastes"],
+        "parameters": [
+          {
+            "name": "lang",
+            "in": "query",
+            "description": "Language for syntax highlighting (e.g. json, sh, rust)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The paste content as plain text",
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              },
+              "examples": {
+                "simple": {
+                  "value": "hello world"
+                },
+                "code": {
+                  "value": "const x = 42\nconsole.log(x)"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Paste created successfully. Returns the paste URL.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "Absolute URL to the created paste, followed by a newline. Origin is derived from the incoming request.",
+                  "examples": ["{origin}/01JNQX5G7K3M2R4T6V8W0Y1Z\n"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Empty body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "empty": {
+                    "value": {
+                      "error": "Empty body"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create": {
+      "get": {
+        "operationId": "createPasteQuery",
+        "summary": "Create a paste via query parameters",
+        "description": "Creates a new paste using the `content` query parameter. Supports optional base64 encoding and language tagging.",
+        "tags": ["Pastes"],
+        "parameters": [
+          {
+            "name": "content",
+            "in": "query",
+            "required": true,
+            "description": "The paste content. If `encoding=base64`, this should be a base64-encoded string.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "encoding",
+            "in": "query",
+            "description": "Set to `base64` to decode the `content` parameter from base64.",
+            "schema": {
+              "type": "string",
+              "enum": ["base64"]
+            }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "description": "Language for syntax highlighting (e.g. json, sh, rust)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Paste created successfully. Returns the paste URL.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "Absolute URL to the created paste, followed by a newline. Origin is derived from the incoming request.",
+                  "examples": ["{origin}/01JNQX5G7K3M2R4T6V8W0Y1Z\n"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing content query param",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "error": "Missing content query param"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "healthCheck",
+        "summary": "Health check",
+        "tags": ["Meta"],
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "const": "ok"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/docs": {
+      "get": {
+        "operationId": "getDocs",
+        "summary": "API documentation UI",
+        "description": "Renders an interactive API reference powered by Scalar.",
+        "tags": ["Meta"],
+        "responses": {
+          "200": {
+            "description": "HTML page with the API documentation UI",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schema": {
+      "get": {
+        "operationId": "getSchema",
+        "summary": "OpenAPI schema",
+        "description": "Returns the raw OpenAPI 3.2.0 JSON schema for this API.",
+        "tags": ["Meta"],
+        "responses": {
+          "200": {
+            "description": "The OpenAPI specification document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{id}": {
+      "get": {
+        "operationId": "getPaste",
+        "summary": "Get a paste by ID",
+        "description": "Retrieves the content of a paste. Returns plain text when the `Accept` header includes `text/html`, `text/plain`, or `*/*`. Otherwise, falls through to the CLI handler.",
+        "tags": ["Pastes"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PasteId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paste content",
+            "headers": {
+              "X-Language": {
+                "description": "Language the paste was tagged with at creation time. Absent if no language was specified.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/PasteMetadata" },
+                    {
+                      "type": "object",
+                      "required": ["content"],
+                      "properties": {
+                        "content": {
+                          "type": "string",
+                          "description": "The paste content"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Paste not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "PasteId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "ULID of the paste",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "minLength": 26,
+          "maxLength": 26,
+          "examples": ["01JNQX5G7K3M2R4T6V8W0Y1Z"]
+        }
+      }
+    },
+    "schemas": {
+      "PasteMetadata": {
+        "type": "object",
+        "required": ["id", "language", "size", "createdAt"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ULID of the paste",
+            "examples": ["01JNQX5G7K3M2R4T6V8W0Y1Z"]
+          },
+          "language": {
+            "type": ["string", "null"],
+            "description": "Language tag for syntax highlighting",
+            "examples": ["rust", "json", null]
+          },
+          "size": {
+            "type": "integer",
+            "description": "Size of the paste content in bytes",
+            "examples": [42]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of when the paste was created",
+            "examples": ["2026-03-21T12:00:00.000Z"]
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      }
+    }
+  }
+}
