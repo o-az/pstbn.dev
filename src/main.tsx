@@ -112,9 +112,8 @@ app.get("/:id", async context => {
         return context.json({ ...metadata, content: text })
       }
       const ct = metadata?.contentType ?? "text/plain; charset=utf-8"
-      return new Response(object.body, {
-        headers: { "content-type": ct }
-      })
+      context.header("content-type", ct)
+      return context.body(object.body)
     }
   }
   return cli.fetch(context.req.raw)
