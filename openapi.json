@@ -119,6 +119,24 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimit": {
+                    "value": {
+                      "ok": false,
+                      "error": "Rate limit exceeded"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Empty body or missing file field",
             "content": {
@@ -129,11 +147,13 @@
                 "examples": {
                   "empty": {
                     "value": {
+                      "ok": false,
                       "error": "Empty body"
                     }
                   },
                   "missingFile": {
                     "value": {
+                      "ok": false,
                       "error": "Missing 'file' field in multipart body"
                     }
                   }
@@ -191,6 +211,9 @@
               }
             }
           },
+          "429": {
+            "$ref": "#/paths/~1/post/responses/429"
+          },
           "400": {
             "description": "Missing content query param",
             "content": {
@@ -201,6 +224,7 @@
                 "examples": {
                   "missing": {
                     "value": {
+                      "ok": false,
                       "error": "Missing content query param"
                     }
                   }
@@ -448,8 +472,12 @@
       },
       "Error": {
         "type": "object",
-        "required": ["error"],
+        "required": ["ok", "error"],
         "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": false
+          },
           "error": {
             "type": "string",
             "description": "Error message"

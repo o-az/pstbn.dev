@@ -12,6 +12,13 @@ const getScalarConfig: ScalarConfig = baseUrl => ({
   telemetry: false,
   hideModels: true,
   hideClientButton: false,
+  title: packageJSON.name,
+  expandAllResponses: true,
+  showDeveloperTools: "never",
+  documentDownloadType: "json",
+  operationTitleSource: "path",
+  sources: [{ url: "/schema", default: true }],
+  servers: [{ url: baseUrl, description: "Current" }],
   defaultHttpClient: { targetKey: "shell", clientKey: "curl" },
   hiddenClients: {
     c: true,
@@ -30,14 +37,7 @@ const getScalarConfig: ScalarConfig = baseUrl => ({
     php: true,
     r: true,
     swift: true
-  },
-  title: packageJSON.name,
-  expandAllResponses: true,
-  showDeveloperTools: "never",
-  documentDownloadType: "json",
-  operationTitleSource: "path",
-  sources: [{ url: "/schema", default: true }],
-  servers: [{ url: baseUrl, description: "Current" }]
+  }
 })
 
 export const Docs = (props: { baseUrl: string }) => {
