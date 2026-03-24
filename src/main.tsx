@@ -29,10 +29,13 @@ app.use(async (context, next) => {
 })
 
 const rateLimit: MiddlewareHandler<{ Bindings: Cloudflare.Env }> = async (context, next) => {
+  
   const apiKey = context.req.header("x-api-key") ?? context.req.query("apiKey")
   const validKey = apiKey ? await context.env.PASTE_METADATA.get(`apikey:${apiKey}`) : null
+  
   const limiter = validKey ? context.env.RATE_LIMIT_KEYED : context.env.RATE_LIMIT_FREE
   const key = validKey ? apiKey! : (context.req.header("cf-connecting-ip") ?? "unknown")
+  
   const { success } = await limiter.limit({ key })
   if (!success) return context.json({ ok: false, error: "Rate limit exceeded" }, 429)
   await next()
