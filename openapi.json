@@ -380,27 +380,7 @@
       "get": {
         "operationId": "getSchema",
         "summary": "OpenAPI schema",
-        "description": "Returns the raw OpenAPI 3.2.0 JSON schema for this API. Also available at /openapi.json.",
-        "tags": ["Meta"],
-        "responses": {
-          "200": {
-            "description": "The OpenAPI specification document",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/openapi.json": {
-      "get": {
-        "operationId": "getOpenApiJson",
-        "summary": "OpenAPI schema (alias)",
-        "description": "Alias for /schema. Returns the raw OpenAPI 3.2.0 JSON schema.",
+        "description": "Returns the raw OpenAPI 3.2.0 JSON schema for this API. Also available at `/openapi.json`.",
         "tags": ["Meta"],
         "responses": {
           "200": {
