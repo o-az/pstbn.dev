@@ -36,6 +36,17 @@
   ],
   "paths": {
     "/": {
+      "get": {
+        "operationId": "redirectToDocs",
+        "summary": "Redirect to docs",
+        "description": "Redirects to the interactive API documentation UI at /docs.",
+        "tags": ["Meta"],
+        "responses": {
+          "302": {
+            "description": "Redirect to /docs"
+          }
+        }
+      },
       "post": {
         "operationId": "createPasteRaw",
         "summary": "Create a paste from raw body",
@@ -102,14 +113,14 @@
               "text/plain": {
                 "schema": {
                   "type": "string",
-                  "description": "Absolute URL to the created paste, followed by a newline. Origin is derived from the incoming request.",
-                  "examples": ["{origin}/01JNQX5G7K3M2R4T6V8W0Y1Z\n"]
+                  "description": "Absolute URL to the created paste, followed by a newline.",
+                  "examples": ["https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB\n"]
                 }
               }
             }
           },
           "400": {
-            "description": "Empty body",
+            "description": "Empty body or missing file field",
             "content": {
               "application/json": {
                 "schema": {
@@ -119,6 +130,11 @@
                   "empty": {
                     "value": {
                       "error": "Empty body"
+                    }
+                  },
+                  "missingFile": {
+                    "value": {
+                      "error": "Missing 'file' field in multipart body"
                     }
                   }
                 }
@@ -169,8 +185,8 @@
               "text/plain": {
                 "schema": {
                   "type": "string",
-                  "description": "Absolute URL to the created paste, followed by a newline. Origin is derived from the incoming request.",
-                  "examples": ["{origin}/01JNQX5G7K3M2R4T6V8W0Y1Z\n"]
+                  "description": "Absolute URL to the created paste, followed by a newline.",
+                  "examples": ["https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB\n"]
                 }
               }
             }
@@ -186,6 +202,131 @@
                   "missing": {
                     "value": {
                       "error": "Missing content query param"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{id}": {
+      "get": {
+        "operationId": "getPaste",
+        "summary": "Get a paste by ID",
+        "description": "Retrieves paste content or metadata. Use `Accept: application/json` for metadata with content, or `Accept: text/plain` for raw content.",
+        "tags": ["Pastes"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PasteId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paste content or metadata",
+            "headers": {
+              "X-Language": {
+                "description": "Language the paste was tagged with at creation time. Absent if no language was specified.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/PasteMetadata" },
+                    {
+                      "type": "object",
+                      "required": ["content"],
+                      "properties": {
+                        "content": {
+                          "type": "string",
+                          "description": "The paste content"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Paste not found"
+          }
+        }
+      }
+    },
+    "/list": {
+      "get": {
+        "operationId": "listPastes",
+        "summary": "List recent pastes",
+        "description": "Returns a paginated list of paste metadata, ordered by creation time.",
+        "tags": ["Pastes"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of pastes to return",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Pagination cursor from a previous response",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pastes with optional pagination cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["ok", "data", "meta"],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": ["pastes", "cursor"],
+                      "properties": {
+                        "pastes": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PasteMetadata"
+                          }
+                        },
+                        "cursor": {
+                          "type": ["string", "null"],
+                          "description": "Cursor for the next page of results. Null if there are no more results."
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "command": {
+                          "type": "string"
+                        },
+                        "duration": {
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -239,7 +380,7 @@
       "get": {
         "operationId": "getSchema",
         "summary": "OpenAPI schema",
-        "description": "Returns the raw OpenAPI 3.2.0 JSON schema for this API.",
+        "description": "Returns the raw OpenAPI 3.2.0 JSON schema for this API. Also available at /openapi.json.",
         "tags": ["Meta"],
         "responses": {
           "200": {
@@ -255,55 +396,22 @@
         }
       }
     },
-    "/{id}": {
+    "/openapi.json": {
       "get": {
-        "operationId": "getPaste",
-        "summary": "Get a paste by ID",
-        "description": "Retrieves the content of a paste. Returns plain text when the `Accept` header includes `text/html`, `text/plain`, or `*/*`. Otherwise, falls through to the CLI handler.",
-        "tags": ["Pastes"],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/PasteId"
-          }
-        ],
+        "operationId": "getOpenApiJson",
+        "summary": "OpenAPI schema (alias)",
+        "description": "Alias for /schema. Returns the raw OpenAPI 3.2.0 JSON schema.",
+        "tags": ["Meta"],
         "responses": {
           "200": {
-            "description": "Paste content",
-            "headers": {
-              "X-Language": {
-                "description": "Language the paste was tagged with at creation time. Absent if no language was specified.",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
+            "description": "The OpenAPI specification document",
             "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              },
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    { "$ref": "#/components/schemas/PasteMetadata" },
-                    {
-                      "type": "object",
-                      "required": ["content"],
-                      "properties": {
-                        "content": {
-                          "type": "string",
-                          "description": "The paste content"
-                        }
-                      }
-                    }
-                  ]
+                  "type": "object"
                 }
               }
             }
-          },
-          "404": {
-            "description": "Paste not found"
           }
         }
       }
@@ -321,7 +429,7 @@
           "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
           "minLength": 26,
           "maxLength": 26,
-          "examples": ["01JNQX5G7K3M2R4T6V8W0Y1Z"]
+          "examples": ["01KMEND534DJFKS65C2HTC5VBB"]
         }
       }
     },
@@ -333,7 +441,7 @@
           "id": {
             "type": "string",
             "description": "ULID of the paste",
-            "examples": ["01JNQX5G7K3M2R4T6V8W0Y1Z"]
+            "examples": ["01KMEND534DJFKS65C2HTC5VBB"]
           },
           "language": {
             "type": ["string", "null"],
@@ -349,7 +457,12 @@
             "type": "string",
             "format": "date-time",
             "description": "ISO 8601 timestamp of when the paste was created",
-            "examples": ["2026-03-21T12:00:00.000Z"]
+            "examples": ["2026-03-24T00:55:06.596Z"]
+          },
+          "contentType": {
+            "type": "string",
+            "description": "MIME type of the paste content, auto-detected from binary signatures or request headers",
+            "examples": ["text/plain", "image/png", "application/octet-stream"]
           }
         }
       },

@@ -2,12 +2,14 @@ import { Cli, z } from "incur"
 
 import { createPaste, getPasteContent, getPasteMetadata, listPastes } from "#storage.ts"
 
-export const cli = Cli.create("pstbn.dev", {
+const BASE_URL = process.env.PSTBN_URL ?? "https://pstbn.dev"
+
+export const cli = Cli.create("pstbn", {
   version: process.env.APP_VERSION,
-  description: "Agent-frist, simple, robust pastebin",
+  description: "Agent-first, simple, robust pastebin",
   vars: z.object({
-    r2: z.custom<R2Bucket>(),
-    kv: z.custom<KVNamespace>()
+    r2: z.custom<R2Bucket>().optional(),
+    kv: z.custom<KVNamespace>().optional()
   })
 })
   .command("create", {
@@ -21,10 +23,10 @@ export const cli = Cli.create("pstbn.dev", {
     }),
     alias: { language: "l", content: "c" },
     output: z.object({
-      id: z.string(),
-      language: z.string().nullable(),
-      size: z.number(),
-      createdAt: z.string(),
+      id: z.string().optional(),
+      language: z.string().nullable().optional(),
+      size: z.number().optional(),
+      createdAt: z.string().optional(),
       url: z.string()
     }),
     examples: [
@@ -44,22 +46,46 @@ export const cli = Cli.create("pstbn.dev", {
         })
       }
 
-      const paste = await createPaste(
-        context.var.kv,
-        context.var.r2,
-        new TextEncoder().encode(content).buffer,
-        context.options.language ?? null
-      )
+      const { kv, r2 } = context.var
+      if (kv && r2) {
+        const paste = await createPaste(
+          kv,
+          r2,
+          new TextEncoder().encode(content).buffer,
+          context.options.language ?? null
+        )
+        return context.ok(
+          { ...paste, url: `/${paste.id}` },
+          {
+            cta: {
+              description: "Next steps:",
+              commands: [{ command: `get ${paste.id}`, description: "View the paste" }]
+            }
+          }
+        )
+      }
 
+      const lang = context.options.language
+      const url = new URL(lang ? `?lang=${lang}` : "/", BASE_URL)
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: content
+      })
+
+      if (!response.ok) {
+        const body = await response.text()
+        return context.error({ code: "CREATE_FAILED", message: body || "Failed to create paste" })
+      }
+
+      const pasteUrl = (await response.text()).trim()
+      const id = pasteUrl.split("/").pop()
       return context.ok(
-        {
-          ...paste,
-          url: `/${paste.id}`
-        },
+        { url: pasteUrl },
         {
           cta: {
             description: "Next steps:",
-            commands: [{ command: `get ${paste.id}`, description: "View the paste" }]
+            commands: [{ command: `get ${id}`, description: "View the paste" }]
           }
         }
       )
@@ -78,27 +104,56 @@ export const cli = Cli.create("pstbn.dev", {
       { args: { id: "01ABC123" }, options: { meta: true }, description: "Get paste metadata" }
     ],
     run: async context => {
+      const { kv, r2 } = context.var
+
       if (context.options.meta) {
-        const metadata = await getPasteMetadata(context.var.kv, context.args.id)
-        if (!metadata) {
+        if (kv) {
+          const metadata = await getPasteMetadata(kv, context.args.id)
+          if (!metadata) {
+            return context.error({
+              code: "NOT_FOUND",
+              message: `Paste ${context.args.id} not found`,
+              retryable: false
+            })
+          }
+          return metadata
+        }
+        const response = await fetch(new URL(`/${context.args.id}`, BASE_URL), {
+          headers: { Accept: "application/json" }
+        })
+        if (!response.ok) {
           return context.error({
             code: "NOT_FOUND",
             message: `Paste ${context.args.id} not found`,
             retryable: false
           })
         }
-        return metadata
+        return await response.json()
       }
 
-      const object = await getPasteContent(context.var.r2, context.args.id)
-      if (!object) {
+      if (r2) {
+        const object = await getPasteContent(r2, context.args.id)
+        if (!object) {
+          return context.error({
+            code: "NOT_FOUND",
+            message: `Paste ${context.args.id} not found`,
+            retryable: false
+          })
+        }
+        return { content: await object.text() }
+      }
+
+      const response = await fetch(new URL(`/${context.args.id}`, BASE_URL), {
+        headers: { Accept: "text/plain" }
+      })
+      if (!response.ok) {
         return context.error({
           code: "NOT_FOUND",
           message: `Paste ${context.args.id} not found`,
           retryable: false
         })
       }
-      return { content: await object.text() }
+      return { content: await response.text() }
     }
   })
   .command("list", {
@@ -120,10 +175,30 @@ export const cli = Cli.create("pstbn.dev", {
       cursor: z.string().nullable()
     }),
     run: async context => {
-      return await listPastes(context.var.kv, {
-        limit: context.options.limit,
-        cursor: context.options.cursor
+      const { kv } = context.var
+      if (kv) {
+        return await listPastes(kv, {
+          limit: context.options.limit,
+          cursor: context.options.cursor
+        })
+      }
+
+      const params = new URLSearchParams({ limit: String(context.options.limit) })
+      if (context.options.cursor) params.set("cursor", context.options.cursor)
+      const response = await fetch(new URL(`/list?${params}`, BASE_URL))
+      const json: unknown = await response.json()
+      const Paste = z.object({
+        id: z.string(),
+        language: z.string().nullable(),
+        size: z.number(),
+        createdAt: z.string()
       })
+      const ListResponse = z.object({
+        ok: z.boolean(),
+        data: z.object({ pastes: z.array(Paste), cursor: z.nullable(z.string()) })
+      })
+      const { data } = ListResponse.parse(json)
+      return { pastes: data.pastes, cursor: data.cursor }
     }
   })
 

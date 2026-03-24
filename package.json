@@ -1,11 +1,12 @@
 {
   "name": "pstbn",
-  "version": "0.0.0",
+  "version": "0.0.1",
+  "description": "Agent-first, simple, robust pastebin",
+  "homepage": "https://pstbn.dev",
   "license": "MIT",
-  "repository": "github:o-az/pstbn",
-  "bin": {
-    "pstbn": "./src/bin.ts"
-  },
+  "author": "omar <code@omar.mov>",
+  "repository": "github:o-az/pstbn.dev",
+  "bin": "./src/bin.ts",
   "type": "module",
   "imports": {
     "#*": "./src/*",
@@ -26,7 +27,6 @@
     "postinstall": "simple-git-hooks"
   },
   "dependencies": {
-    "@scalar/hono-api-reference": "^0.10.4",
     "@std/ulid": "npm:@jsr/std__ulid",
     "hono": "^4.12.9",
     "incur": "^0.3.9",

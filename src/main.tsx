@@ -1,5 +1,4 @@
 import { Hono } from "hono"
-import { csrf } from "hono/csrf"
 import { showRoutes } from "hono/dev"
 import { timeout } from "hono/timeout"
 import { prettyJSON } from "hono/pretty-json"
@@ -20,7 +19,6 @@ cli.use(async (context, next) => {
 
 const app = new Hono<{ Bindings: Cloudflare.Env }>()
 
-app.use(csrf())
 app.use("*", timeout(5_000))
 app.use(prettyJSON({ force: true }))
 
