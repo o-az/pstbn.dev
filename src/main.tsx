@@ -60,6 +60,7 @@ app.post("/", rateLimit, async context => {
   if (rawContentType.includes("multipart/form-data")) {
     const form = await context.req.parseBody()
     const file = form["file"]
+
     if (!(file instanceof File))
       return context.json({ ok: false, error: "Missing 'file' field in multipart body" }, 400)
     body = await file.arrayBuffer()
@@ -123,8 +124,8 @@ app.get("/:id", async context => {
         const text = await object.text()
         return context.json({ ...metadata, content: text })
       }
-      const ct = metadata?.contentType ?? "text/plain; charset=utf-8"
-      context.header("content-type", ct)
+      const contentType = metadata?.contentType ?? "text/plain; charset=utf-8"
+      context.header("content-type", contentType)
       return context.body(object.body)
     }
   }

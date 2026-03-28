@@ -38,13 +38,12 @@ export const cli = Cli.create("pstbn", {
     ],
     run: async context => {
       const content = context.options.content
-      if (!content) {
+      if (!content)
         return context.error({
           code: "MISSING_CONTENT",
           message: "Provide content via --content or pipe via stdin",
           retryable: true
         })
-      }
 
       const { kv, r2 } = context.var
       if (kv && r2) {
@@ -109,50 +108,50 @@ export const cli = Cli.create("pstbn", {
       if (context.options.meta) {
         if (kv) {
           const metadata = await getPasteMetadata(kv, context.args.id)
-          if (!metadata) {
+          if (!metadata)
             return context.error({
               code: "NOT_FOUND",
               message: `Paste ${context.args.id} not found`,
               retryable: false
             })
-          }
+
           return metadata
         }
         const response = await fetch(new URL(`/${context.args.id}`, BASE_URL), {
           headers: { Accept: "application/json" }
         })
-        if (!response.ok) {
+        if (!response.ok)
           return context.error({
             code: "NOT_FOUND",
             message: `Paste ${context.args.id} not found`,
             retryable: false
           })
-        }
+
         return await response.json()
       }
 
       if (r2) {
         const object = await getPasteContent(r2, context.args.id)
-        if (!object) {
+        if (!object)
           return context.error({
             code: "NOT_FOUND",
             message: `Paste ${context.args.id} not found`,
             retryable: false
           })
-        }
+
         return { content: await object.text() }
       }
 
       const response = await fetch(new URL(`/${context.args.id}`, BASE_URL), {
         headers: { Accept: "text/plain" }
       })
-      if (!response.ok) {
+      if (!response.ok)
         return context.error({
           code: "NOT_FOUND",
           message: `Paste ${context.args.id} not found`,
           retryable: false
         })
-      }
+
       return { content: await response.text() }
     }
   })
@@ -176,16 +175,19 @@ export const cli = Cli.create("pstbn", {
     }),
     run: async context => {
       const { kv } = context.var
-      if (kv) {
+      if (kv)
         return await listPastes(kv, {
           limit: context.options.limit,
           cursor: context.options.cursor
         })
-      }
 
       const params = new URLSearchParams({ limit: String(context.options.limit) })
       if (context.options.cursor) params.set("cursor", context.options.cursor)
-      const response = await fetch(new URL(`/list?${params}`, BASE_URL))
+
+      const url = new URL(`/list`, BASE_URL)
+      url.search = params.toString()
+
+      const response = await fetch(url)
       const json: unknown = await response.json()
       const Paste = z.object({
         id: z.string(),

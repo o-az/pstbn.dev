@@ -25,7 +25,7 @@
     "oxlint": {
       "initialization_options": {
         "settings": {
-          "configPath": ".oxlintrc.json",
+          "configPath": "oxlint.config.ts",
           "run": "onType",
           "disableNestedConfig": false,
           "fixKind": "safe_fix",
@@ -37,7 +37,7 @@
     "oxfmt": {
       "initialization_options": {
         "settings": {
-          "fmt.configPath": ".oxfmtrc.json",
+          "fmt.configPath": "oxfmt.config.ts",
           "run": "onSave"
         }
       }

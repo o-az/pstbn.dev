@@ -56,8 +56,8 @@ export const Docs = (props: { baseUrl: string }) => {
       <body>
         <main id='app'></main>
         <script src='https://cdn.jsdelivr.net/npm/@scalar/api-reference'></script>
-        <script>{html
-        /* jsx */ `Scalar.createApiReference('#app', ${raw(JSON.stringify(scalarConfig))})`}</script>
+        <script>{html /* jsx */ `Scalar.createApiReference('#app',
+        ${raw(JSON.stringify(scalarConfig))})`}</script>
       </body>
     </html>
   )
