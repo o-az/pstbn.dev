@@ -1,0 +1,16 @@
+.env
+.env.*
+.dev.vars
+.wrangler
+dist/pstbn
+src/
+wrangler.json
+vite.config.ts
+oxfmt.config.ts
+oxlint.config.ts
+tsconfig.json
+worker-configuration.d.ts
+.zed/
+.github/
+.git/
+node_modules/
