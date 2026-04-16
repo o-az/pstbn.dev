@@ -1,0 +1,61 @@
+/**
+ *
+ *
+ * File sniffer utilities for inferring a safe response MIME type from bytes.
+ */
+
+const SIGNATURES = [
+  [[0xff, 0xd8, 0xff], "image/jpeg"],
+  [[0x89, 0x50, 0x4e, 0x47], "image/png"],
+  [[0x47, 0x49, 0x46, 0x38], "image/gif"],
+  [[0x52, 0x49, 0x46, 0x46], "image/webp"],
+  [[0x25, 0x50, 0x44, 0x46], "application/pdf"],
+  [[0x50, 0x4b, 0x03, 0x04], "application/zip"],
+  [[0x1f, 0x8b, 0x08], "application/gzip"]
+] as const satisfies Array<[Array<number>, string]>
+
+export type SniffedFile = {
+  mimeType: string
+  kind: "text" | "binary"
+}
+
+export function sniffFile(buf: ArrayBuffer): SniffedFile {
+  const bytes = new Uint8Array(buf, 0, Math.min(12, buf.byteLength))
+
+  for (const [signature, mimeType] of SIGNATURES) {
+    if (signature.every((byte, index) => bytes[index] === byte)) {
+      return {
+        mimeType,
+        kind: "binary"
+      }
+    }
+  }
+
+  if (looksLikeText(buf)) {
+    return {
+      mimeType: "text/plain; charset=utf-8",
+      kind: "text"
+    }
+  }
+
+  return {
+    mimeType: "application/octet-stream",
+    kind: "binary"
+  }
+}
+
+function looksLikeText(buf: ArrayBuffer): boolean {
+  const bytes = new Uint8Array(buf, 0, Math.min(8_192, buf.byteLength))
+  if (!bytes.length) return true
+
+  let suspicious = 0
+
+  for (const byte of bytes) {
+    if (byte === 0) return false
+
+    const isControl = byte < 0x20 && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d
+    if (isControl) suspicious += 1
+  }
+
+  return suspicious / bytes.length < 0.02
+}

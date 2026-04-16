@@ -51,23 +51,19 @@ app
   .get("/", context => context.redirect("/docs"))
 
 app.post("/", rateLimit, async context => {
-  const rawContentType = context.req.header("content-type") ?? ""
   const language = context.req.query("lang") ?? null
 
   let body: ArrayBuffer
-  let contentType: string | undefined
 
-  if (rawContentType.includes("multipart/form-data")) {
+  if ((context.req.header("content-type") ?? "").includes("multipart/form-data")) {
     const form = await context.req.parseBody()
     const file = form["file"]
 
     if (!(file instanceof File))
       return context.json({ ok: false, error: "Missing 'file' field in multipart body" }, 400)
     body = await file.arrayBuffer()
-    contentType = file.type || undefined
   } else {
     body = await context.req.arrayBuffer()
-    contentType = rawContentType || undefined
   }
 
   if (!body.byteLength) return context.json({ ok: false, error: "Empty body" }, 400)
@@ -76,8 +72,7 @@ app.post("/", rateLimit, async context => {
     context.env.PASTE_METADATA,
     context.env.PASTE_CONTENT,
     body,
-    language,
-    contentType
+    language
   )
   const url = new URL(context.req.url)
 

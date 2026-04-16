@@ -1,23 +1,7 @@
 import * as z from "zod/mini"
 import { ulid } from "@std/ulid"
 
-const SIGNATURES = [
-  [[0xff, 0xd8, 0xff], "image/jpeg"],
-  [[0x89, 0x50, 0x4e, 0x47], "image/png"],
-  [[0x47, 0x49, 0x46, 0x38], "image/gif"],
-  [[0x52, 0x49, 0x46, 0x46], "image/webp"], // RIFF (check WEBP at offset 8 ideally, but good enough)
-  [[0x25, 0x50, 0x44, 0x46], "application/pdf"]
-] as const satisfies Array<[Array<number>, string]>
-
-function detectContentType(buf: ArrayBuffer, hint?: string): string {
-  if (hint && hint !== "application/octet-stream") return hint
-
-  const bytes = new Uint8Array(buf, 0, Math.min(12, buf.byteLength))
-  for (const [sig, mime] of SIGNATURES) {
-    if (sig.every((byte, index) => bytes[index] === byte)) return mime
-  }
-  return hint ?? "application/octet-stream"
-}
+import { sniffFile } from "#utilities.ts"
 
 const PasteMetadataSchema = z.object({
   id: z.string(),
@@ -33,12 +17,11 @@ export async function createPaste(
   kv: KVNamespace,
   r2: R2Bucket,
   content: ArrayBuffer,
-  language: string | null,
-  contentType?: string
+  language: string | null
 ): Promise<PasteMetadata> {
   const id = ulid()
 
-  const detectedType = detectContentType(content, contentType)
+  const detectedType = sniffFile(content).mimeType
 
   const metadata: PasteMetadata = {
     id,
