@@ -86,7 +86,7 @@ curl "https://pstbn.dev/01KRZ094KC2P2T5Q50A564YWR5"
 Force a response format:
 
 ```sh
-curl "https://pstbn.dev/01KMEND5TRZ5VCH7S0YXJFGJ8Y.json"
+curl "https://pstbn.dev/01KRZ0C4HPPVG1589JE7S8TMQH.json"
 curl "https://pstbn.dev/01KMEND5TRZ5VCH7S0YXJFGJ8Y.txt"
 curl "https://pstbn.dev/01KMEND5TRZ5VCH7S0YXJFGJ8Y.md"
 ```
