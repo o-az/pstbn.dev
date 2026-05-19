@@ -100,30 +100,48 @@ app.get("/create", rateLimit, async context => {
   return context.text(`${url.origin}/${paste.id}\n`, 201)
 })
 
+const FORMAT_CONTENT_TYPES = {
+  json: "application/json; charset=utf-8",
+  txt: "text/plain; charset=utf-8",
+  md: "text/markdown; charset=utf-8"
+} as const
+
+type PasteFormat = keyof typeof FORMAT_CONTENT_TYPES
+
+function parsePastePath(raw: string): { id: string; format: PasteFormat | null } {
+  const match = raw.match(/^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md))?$/)
+  return {
+    id: match?.groups?.id ?? raw,
+    format: (match?.groups?.format as PasteFormat | undefined) ?? null
+  }
+}
+
 app.get("/:id", async context => {
   const accept = context.req.header("accept") ?? ""
-  const wantsJSON = accept.includes("application/json")
-  const wantsText =
-    accept.includes("text/html") || accept.includes("text/plain") || accept === "*/*"
+  const { id, format } = parsePastePath(context.req.param("id"))
+  const [object, metadata] = await Promise.all([
+    getPasteContent(context.env.PASTE_CONTENT, id),
+    getPasteMetadata(context.env.PASTE_METADATA, id)
+  ])
 
-  if (wantsJSON || wantsText) {
-    const id = context.req.param("id")
-    const [object, metadata] = await Promise.all([
-      getPasteContent(context.env.PASTE_CONTENT, id),
-      getPasteMetadata(context.env.PASTE_METADATA, id)
-    ])
+  if (object !== null) {
+    if (metadata?.language) context.header("X-Language", metadata.language)
 
-    if (object !== null) {
-      if (metadata?.language) context.header("X-Language", metadata.language)
-      if (wantsJSON) {
-        const text = await object.text()
-        return context.json({ ...metadata, content: text })
-      }
-      const contentType = metadata?.contentType ?? "text/plain; charset=utf-8"
-      context.header("content-type", contentType)
-      return context.body(object.body)
+    if (context.req.query("meta") === "true") {
+      const text = await object.text()
+      return context.json({ ...metadata, content: text })
     }
+
+    const contentType = accept.includes("application/json")
+      ? FORMAT_CONTENT_TYPES.json
+      : format
+        ? FORMAT_CONTENT_TYPES[format]
+        : (metadata?.contentType ?? "text/plain; charset=utf-8")
+
+    context.header("content-type", contentType)
+    return context.body(object.body)
   }
+
   return cli.fetch(context.req.raw)
 })
 

@@ -8,73 +8,106 @@ Agent-first privacy-oriented pastebin service with CLI and HTTP support.
 
 **POST** `/`
 
+Plain text:
+
 ```sh
-# Plain text
 curl --request POST \
   --url "https://pstbn.dev" \
   --data "hello world"
-# https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB
+
+# https://pstbn.dev/01KRYZZXC2JXWPH3AGQ30FEA28
 ```
 
+With language hint:
+
 ```sh
-# With language hint
 curl --request POST \
   --url "https://pstbn.dev?lang=ts" \
   --data "const x: number = 42"
-# https://pstbn.dev/01KMEND5TRZ5VCH7S0YXJFGJ8Y
+
+# https://pstbn.dev/01KRZ00PYGN4PS2CYG81TE7FXT
 ```
 
+File upload (multipart):
+
 ```sh
-# File upload (multipart)
 curl --request POST \
   --url "https://pstbn.dev" \
-  --form "file=@screenshot.png"
-# https://pstbn.dev/01KMEND6DR73ESR8MNVH9KCHWA
+  --form "file=@vite.config.ts"
+
+# https://pstbn.dev/01KRZ0299F6K67N3GA614V6K2G
 ```
 
 Returns the paste URL as plain text (status `201`).
 
 **GET** `/create`
 
+Via query parameter as text:
+
 ```sh
-# Via query parameter as text
 curl "https://pstbn.dev/create" \
   --url-query "content=hello world"
+
+# https://pstbn.dev/01KRZ03KWDK2DA983SA52JAHBW
 ```
+
+Via query parameter as text, with language hint:
 
 ```sh
 curl "https://pstbn.dev/create" \
   --url-query "content=const x = 1" \
   --url-query "lang=ts"
+
+# https://pstbn.dev/01KRZ04DEHANPCSDNFXVBHQTB3
 ```
 
+Via query parameter as base64-encoded text:
+
 ```sh
-# Via query parameter as base64-encoded text
+ENCODED_CONTENT=$(echo -n "hello world" | base64)
 curl "https://pstbn.dev/create" \
-  --url-query "content=aGVsbG8=" \
+  --url-query "content=$ENCODED_CONTENT" \
   --url-query "encoding=base64"
+
+# https://pstbn.dev/01KRZ094KC2P2T5Q50A564YWR5
 ```
 
 ### Get a paste
 
 **GET** `/:id`
 
+Get content as plain text:
+
 ```sh
-# Get content as plain text
-curl "https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB"
+curl "https://pstbn.dev/01KRZ094KC2P2T5Q50A564YWR5"
 # hello world
 ```
 
+Force a response format:
+
 ```sh
-# Get metadata as JSON
+curl "https://pstbn.dev/01KMEND5TRZ5VCH7S0YXJFGJ8Y.json"
+curl "https://pstbn.dev/01KMEND5TRZ5VCH7S0YXJFGJ8Y.txt"
+curl "https://pstbn.dev/01KMEND5TRZ5VCH7S0YXJFGJ8Y.md"
+```
+
+Accept: application/json also returns the raw paste content as application/json:
+
+```sh
 curl "https://pstbn.dev/01KMEND5TRZ5VCH7S0YXJFGJ8Y" \
    --header "Accept: application/json"
+```
+
+Get metadata plus content as JSON:
+
+```sh
+curl "https://pstbn.dev/01KMEND5TRZ5VCH7S0YXJFGJ8Y?meta=true"
 # {
 #   "id": "01KMEND5TRZ5VCH7S0YXJFGJ8Y",
 #   "size": 20,
 #   "createdAt": "2026-03-24T00:55:07.352Z",
 #   "language": "ts",
-#   "contentType": "application/x-www-form-urlencoded",
+#   "contentType": "text/plain; charset=utf-8",
 #   "content": "const x: number = 42"
 # }
 ```

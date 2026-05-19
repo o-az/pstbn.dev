@@ -239,16 +239,24 @@
       "get": {
         "operationId": "getPaste",
         "summary": "Get a paste by ID",
-        "description": "Retrieves paste content or metadata. Use `Accept: application/json` for metadata with content, or `Accept: text/plain` for raw content.",
+        "description": "Retrieves raw paste content. Use `Accept: application/json` or the `.json` suffix to return content as application/json. Use `.txt` or `.md` to force text/plain or text/markdown. Use `?meta=true` for metadata plus content as JSON.",
         "tags": ["Pastes"],
         "parameters": [
           {
             "$ref": "#/components/parameters/PasteId"
+          },
+          {
+            "name": "meta",
+            "in": "query",
+            "description": "Set to `true` to return metadata plus content as a JSON object.",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Paste content or metadata",
+            "description": "Raw paste content, or metadata plus content when `meta=true` is supplied",
             "headers": {
               "X-Language": {
                 "description": "Language the paste was tagged with at creation time. Absent if no language was specified.",
@@ -263,19 +271,31 @@
                   "type": "string"
                 }
               },
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              },
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    { "$ref": "#/components/schemas/PasteMetadata" },
+                  "oneOf": [
                     {
-                      "type": "object",
-                      "required": ["content"],
-                      "properties": {
-                        "content": {
-                          "type": "string",
-                          "description": "The paste content"
+                      "description": "Raw paste content requested as application/json"
+                    },
+                    {
+                      "allOf": [
+                        { "$ref": "#/components/schemas/PasteMetadata" },
+                        {
+                          "type": "object",
+                          "required": ["content"],
+                          "properties": {
+                            "content": {
+                              "type": "string",
+                              "description": "The paste content"
+                            }
+                          }
                         }
-                      }
+                      ]
                     }
                   ]
                 }

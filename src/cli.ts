@@ -117,9 +117,7 @@ export const cli = Cli.create("pstbn", {
 
           return metadata
         }
-        const response = await fetch(new URL(`/${context.args.id}`, BASE_URL), {
-          headers: { Accept: "application/json" }
-        })
+        const response = await fetch(new URL(`/${context.args.id}?meta=true`, BASE_URL))
         if (!response.ok)
           return context.error({
             code: "NOT_FOUND",

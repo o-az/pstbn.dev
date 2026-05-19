@@ -36,31 +36,31 @@
   },
   "dependencies": {
     "@std/ulid": "npm:@jsr/std__ulid",
-    "hono": "^4.12.14",
-    "incur": "^0.4.1",
-    "zod": "^4.3.6"
+    "hono": "^4.12.19",
+    "incur": "^0.4.6",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.32.3",
-    "@cloudflare/workers-types": "^4.20260416.2",
-    "@j178/prek": "^0.3.9",
-    "@scalar/api-reference": "^1.52.2",
-    "@scalar/types": "^0.9.0",
+    "@cloudflare/vite-plugin": "^1.37.1",
+    "@cloudflare/workers-types": "^4.20260519.1",
+    "@j178/prek": "^0.4.0",
+    "@scalar/api-reference": "^1.57.2",
+    "@scalar/types": "^0.11.0",
     "@total-typescript/ts-reset": "^0.6.1",
-    "@types/bun": "^1.3.12",
-    "@types/node": "^25.6.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260416.2",
-    "@vitejs/devtools": "^0.1.13",
-    "oxfmt": "^0.45.0",
-    "oxlint": "^1.60.0",
-    "oxlint-tsgolint": "^0.21.1",
+    "@types/bun": "^1.3.14",
+    "@types/node": "^25.9.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260518.1",
+    "@vitejs/devtools": "^0.1.24",
+    "oxfmt": "^0.50.0",
+    "oxlint": "^1.65.0",
+    "oxlint-tsgolint": "^0.23.0",
     "simple-git-hooks": "^2.13.1",
-    "typed-query-selector": "^2.12.1",
-    "typescript": "^6.0.2",
-    "vite": "^8.0.8",
+    "typed-query-selector": "^2.12.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.13",
     "vite-plugin-devtools-json": "^1.0.0",
-    "vite-plugin-inspect": "^12.0.0-beta.1",
-    "wrangler": "^4.83.0"
+    "vite-plugin-inspect": "^12.0.0-beta.2",
+    "wrangler": "^4.92.0"
   },
   "peerDependencies": {
     "@cloudflare/workers-types": ">=4"
@@ -73,7 +73,7 @@
   "simple-git-hooks": {
     "pre-commit": "bun prek run --all-files --config='.github/.pre-commit.yml' && bun check"
   },
-  "packageManager": "bun@1.3.12",
+  "packageManager": "bun@1.3.14",
   "readme": ".github/README.md",
   "trustedDependencies": [
     "@j178/prek",
