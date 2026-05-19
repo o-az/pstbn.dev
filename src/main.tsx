@@ -103,13 +103,14 @@ app.get("/create", rateLimit, async context => {
 const FORMAT_CONTENT_TYPES = {
   json: "application/json; charset=utf-8",
   txt: "text/plain; charset=utf-8",
-  md: "text/markdown; charset=utf-8"
+  md: "text/markdown; charset=utf-8",
+  mp4: "video/mp4"
 } as const
 
 type PasteFormat = keyof typeof FORMAT_CONTENT_TYPES
 
 function parsePastePath(raw: string): { id: string; format: PasteFormat | null } {
-  const match = raw.match(/^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md))?$/)
+  const match = raw.match(/^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|mp4))?$/)
   return {
     id: match?.groups?.id ?? raw,
     format: (match?.groups?.format as PasteFormat | undefined) ?? null

@@ -14,6 +14,20 @@ const SIGNATURES = [
   [[0x1f, 0x8b, 0x08], "application/gzip"]
 ] as const satisfies Array<[Array<number>, string]>
 
+const MP4_BRANDS = new Set([
+  "avc1",
+  "dash",
+  "iso2",
+  "iso3",
+  "iso4",
+  "iso5",
+  "iso6",
+  "isom",
+  "m4v ",
+  "mp41",
+  "mp42"
+])
+
 export type SniffedFile = {
   mimeType: string
   kind: "text" | "binary"
@@ -31,6 +45,13 @@ export function sniffFile(buf: ArrayBuffer): SniffedFile {
     }
   }
 
+  if (looksLikeMp4(buf)) {
+    return {
+      mimeType: "video/mp4",
+      kind: "binary"
+    }
+  }
+
   if (looksLikeText(buf)) {
     return {
       mimeType: "text/plain; charset=utf-8",
@@ -42,6 +63,15 @@ export function sniffFile(buf: ArrayBuffer): SniffedFile {
     mimeType: "application/octet-stream",
     kind: "binary"
   }
+}
+
+function looksLikeMp4(buf: ArrayBuffer): boolean {
+  if (buf.byteLength < 12) return false
+
+  const boxType = new TextDecoder().decode(new Uint8Array(buf, 4, 4))
+  const brand = new TextDecoder().decode(new Uint8Array(buf, 8, 4))
+
+  return boxType === "ftyp" && MP4_BRANDS.has(brand)
 }
 
 function looksLikeText(buf: ArrayBuffer): boolean {
