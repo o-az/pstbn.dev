@@ -104,13 +104,20 @@ const FORMAT_CONTENT_TYPES = {
   json: "application/json; charset=utf-8",
   txt: "text/plain; charset=utf-8",
   md: "text/markdown; charset=utf-8",
-  mp4: "video/mp4"
+  mp4: "video/mp4",
+  m4v: "video/x-m4v",
+  mov: "video/quicktime",
+  webm: "video/webm",
+  avi: "video/x-msvideo",
+  mkv: "video/x-matroska"
 } as const
 
 type PasteFormat = keyof typeof FORMAT_CONTENT_TYPES
 
 function parsePastePath(raw: string): { id: string; format: PasteFormat | null } {
-  const match = raw.match(/^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|mp4))?$/)
+  const match = raw.match(
+    /^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|mp4|m4v|mov|webm|avi|mkv))?$/
+  )
   return {
     id: match?.groups?.id ?? raw,
     format: (match?.groups?.format as PasteFormat | undefined) ?? null
