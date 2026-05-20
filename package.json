@@ -1,18 +1,22 @@
 {
   "name": "pstbn.dev",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Agent-first, simple, robust pastebin",
   "homepage": "https://pstbn.dev",
   "license": "MIT",
   "author": "omar <code@omar.mov>",
-  "repository": "github:o-az/pstbn.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/o-az/pstbn.dev.git"
+  },
   "bin": {
-    "pstbn": "./dist/bin.js"
+    "pstbn.dev": "./src/bin.ts"
   },
   "files": [
-    "dist/bin.js",
+    "dist",
+    "README.md",
     "openapi.json",
-    ".github/README.md"
+    "package.json"
   ],
   "type": "module",
   "imports": {
@@ -21,9 +25,23 @@
     "#package.json": "./package.json",
     "#wrangler.json": "./wrangler.json"
   },
+  "exports": {
+    ".": "./src/bin.ts",
+    "./*": "./*"
+  },
+  "publishConfig": {
+    "bin": {
+      "pstbn.dev": "./dist/bin.mjs"
+    },
+    "exports": {
+      ".": "./dist/bin.mjs",
+      "./*": "./*"
+    },
+    "access": "public"
+  },
   "scripts": {
     "dev": "vite dev --mode='development' --config='vite.config.ts'",
-    "build": "bun build ./src/bin.ts --target='node' --outdir='./dist' --outfile='./dist/bin.js' --format='esm' --target='node'",
+    "build": "tsdown --config='tsdown.config.ts'",
     "test": "echo 'noop'",
     "preview": "vite preview",
     "format": "oxfmt --config='oxfmt.config.ts' --write",
@@ -32,48 +50,54 @@
     "deploy": "NODE_ENV='production' wrangler deploy",
     "check:types": "bun tsgo --project tsconfig.json --noEmit",
     "types": "wrangler types --env-interface CloudflareBindings",
+    "changeset:version": "changeset version && bun format",
+    "changeset:publish": "changeset publish",
+    "publint": "bun x publint@latest run --pack bun --strict",
+    "attw": "bun x @arethetypeswrong/cli@latest --pack . --ignore-rules='false-cjs' --ignore-rules='cjs-resolves-to-esm' --profile='node16'",
+    "publish:manual": "bun ./scripts/publish.ts --registry='https://registry.npmjs.org'",
+    "prepublishOnly": "bun run build",
     "prepare": "simple-git-hooks"
   },
   "dependencies": {
-    "@std/ulid": "npm:@jsr/std__ulid",
-    "hono": "^4.12.19",
+    "hono": "^4.12.21",
     "incur": "^0.4.6",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.37.1",
-    "@cloudflare/workers-types": "^4.20260519.1",
-    "@j178/prek": "^0.4.0",
+    "@arethetypeswrong/core": "^0.18.2",
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.0",
+    "@cloudflare/vite-plugin": "^1.37.2",
+    "@cloudflare/workers-types": "^4.20260520.1",
+    "@j178/prek": "^0.4.1",
     "@scalar/api-reference": "^1.57.2",
     "@scalar/types": "^0.11.0",
+    "@std/ulid": "npm:@jsr/std__ulid",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "^1.3.14",
-    "@types/node": "^25.9.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260518.1",
+    "@types/node": "^25.9.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260519.1",
     "@vitejs/devtools": "^0.1.24",
-    "oxfmt": "^0.50.0",
-    "oxlint": "^1.65.0",
+    "oxfmt": "^0.51.0",
+    "oxlint": "^1.66.0",
     "oxlint-tsgolint": "^0.23.0",
+    "publint": "^0.3.21",
     "simple-git-hooks": "^2.13.1",
+    "tsdown": "^0.22.0",
     "typed-query-selector": "^2.12.2",
     "typescript": "^6.0.3",
     "vite": "^8.0.13",
     "vite-plugin-devtools-json": "^1.0.0",
     "vite-plugin-inspect": "^12.0.0-beta.2",
-    "wrangler": "^4.92.0"
-  },
-  "peerDependencies": {
-    "@cloudflare/workers-types": ">=4"
-  },
-  "peerDependenciesMeta": {
-    "@cloudflare/workers-types": {
-      "optional": true
-    }
+    "wrangler": "^4.93.0"
   },
   "simple-git-hooks": {
     "pre-commit": "bun prek run --all-files --config='.github/.pre-commit.yml' && bun check"
   },
   "packageManager": "bun@1.3.14",
+  "inlinedDependencies": {
+    "@jsr/std__ulid": "1.0.0"
+  },
   "readme": ".github/README.md",
   "trustedDependencies": [
     "@j178/prek",
