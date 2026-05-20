@@ -114,14 +114,15 @@ const FORMAT_CONTENT_TYPES = {
   mov: "video/quicktime",
   webm: "video/webm",
   avi: "video/x-msvideo",
-  mkv: "video/x-matroska"
+  mkv: "video/x-matroska",
+  cast: "application/x-asciinema; charset=utf-8"
 } as const
 
 type PasteFormat = keyof typeof FORMAT_CONTENT_TYPES
 
 function parsePastePath(raw: string): { id: string; format: PasteFormat | null } {
   const match = raw.match(
-    /^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|html|mp4|m4v|mov|webm|avi|mkv))?$/
+    /^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|html|mp4|m4v|mov|webm|avi|mkv|cast))?$/
   )
   return {
     id: match?.groups?.id ?? raw,
