@@ -14,14 +14,6 @@
     "**/.agents"
   ],
   "lsp": {
-    "tailwindcss-language-server": {
-      "settings": {
-        "classFunctions": ["cva", "cx", "twMerge", "class", "tw\\.[a-z-]+", "cn", "clsx"],
-        "experimental": {
-          "classRegex": ["(?:cls|class|className|classList)\\s\\:\\=\\s\"([^\"]*)"]
-        }
-      }
-    },
     "oxlint": {
       "initialization_options": {
         "settings": {
@@ -60,20 +52,6 @@
     "HTML": {
       "format_on_save": "on",
       "language_servers": ["oxc"],
-      "prettier": {
-        "allowed": false
-      },
-      "formatter": [
-        {
-          "language_server": {
-            "name": "oxfmt"
-          }
-        }
-      ]
-    },
-    "MDX": {
-      "language_servers": ["typescript-language-server", "oxfmt", "oxlint"],
-      "format_on_save": "on",
       "prettier": {
         "allowed": false
       },
