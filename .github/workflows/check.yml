@@ -26,7 +26,7 @@ jobs:
           node-version: "latest"
 
       - name: "🐰 Setup Bun"
-        uses: oven-sh/setup-bun@main
+        uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
 
