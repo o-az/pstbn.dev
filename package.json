@@ -59,7 +59,6 @@
     "prepare": "simple-git-hooks"
   },
   "dependencies": {
-    "check": "^1.0.0",
     "hono": "^4.12.21",
     "incur": "^0.4.6",
     "zod": "^4.4.3"
@@ -69,8 +68,8 @@
     "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.0",
     "@cloudflare/vite-plugin": "^1.37.2",
-    "@cloudflare/workers-types": "^4.20260519.1",
-    "@j178/prek": "^0.4.0",
+    "@cloudflare/workers-types": "^4.20260520.1",
+    "@j178/prek": "^0.4.1",
     "@scalar/api-reference": "^1.57.2",
     "@scalar/types": "^0.11.0",
     "@std/ulid": "npm:@jsr/std__ulid",
