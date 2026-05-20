@@ -5,6 +5,7 @@
     "": {
       "name": "pstbn",
       "dependencies": {
+        "check": "^1.0.0",
         "hono": "^4.12.21",
         "incur": "^0.4.6",
         "zod": "^4.4.3",
@@ -769,6 +770,8 @@
     "character-entities-legacy": ["character-entities-legacy@3.0.0", "", {}, "sha512-RpPp0asT/6ufRm//AJVwpViZbGM/MkjQFxJccQRHmISF/22NBtsHqAWmL+/pmkPWoIUJdWyeVleTl1wydHATVQ=="],
 
     "chardet": ["chardet@2.1.1", "", {}, "sha512-PsezH1rqdV9VvyNhxxOW32/d75r01NY7TQCmOqomRo15ZSOKbpTFVsfjghxo6JloQUCGnH4k1LGu0R4yCLlWQQ=="],
+
+    "check": ["check@1.0.0", "", {}, "sha512-A73IxSAZKTXjde4ZwPliMH1kWbtr8wMM4sxOGvucxhgu12aQeQHYTsfxSNFtdL2dvZMuHKq3cH9bGew6j0rGiw=="],
 
     "chokidar": ["chokidar@5.0.0", "", { "dependencies": { "readdirp": "^5.0.0" } }, "sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw=="],
 

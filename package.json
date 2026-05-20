@@ -59,6 +59,7 @@
     "prepare": "simple-git-hooks"
   },
   "dependencies": {
+    "check": "^1.0.0",
     "hono": "^4.12.21",
     "incur": "^0.4.6",
     "zod": "^4.4.3"
