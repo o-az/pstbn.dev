@@ -17,11 +17,12 @@ export async function createPaste(
   kv: KVNamespace,
   r2: R2Bucket,
   content: ArrayBuffer,
-  language: string | null
+  language: string | null,
+  contentType?: string | null
 ): Promise<PasteMetadata> {
   const id = ulid()
 
-  const detectedType = sniffFile(content).mimeType
+  const detectedType = contentType ?? sniffFile(content).mimeType
 
   const metadata: PasteMetadata = {
     id,

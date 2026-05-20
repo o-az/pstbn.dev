@@ -54,6 +54,7 @@ app.post("/", rateLimit, async context => {
   const language = context.req.query("lang") ?? null
 
   let body: ArrayBuffer
+  let contentType: string | undefined
 
   if ((context.req.header("content-type") ?? "").includes("multipart/form-data")) {
     const form = await context.req.parseBody()
@@ -62,8 +63,10 @@ app.post("/", rateLimit, async context => {
     if (!(file instanceof File))
       return context.json({ ok: false, error: "Missing 'file' field in multipart body" }, 400)
     body = await file.arrayBuffer()
+    contentType = file.type || undefined
   } else {
     body = await context.req.arrayBuffer()
+    contentType = context.req.header("content-type")?.split(";")[0]
   }
 
   if (!body.byteLength) return context.json({ ok: false, error: "Empty body" }, 400)
@@ -72,7 +75,8 @@ app.post("/", rateLimit, async context => {
     context.env.PASTE_METADATA,
     context.env.PASTE_CONTENT,
     body,
-    language
+    language,
+    contentType
   )
   const url = new URL(context.req.url)
 
@@ -104,6 +108,7 @@ const FORMAT_CONTENT_TYPES = {
   json: "application/json; charset=utf-8",
   txt: "text/plain; charset=utf-8",
   md: "text/markdown; charset=utf-8",
+  html: "text/html; charset=utf-8",
   mp4: "video/mp4",
   m4v: "video/x-m4v",
   mov: "video/quicktime",
@@ -116,7 +121,7 @@ type PasteFormat = keyof typeof FORMAT_CONTENT_TYPES
 
 function parsePastePath(raw: string): { id: string; format: PasteFormat | null } {
   const match = raw.match(
-    /^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|mp4|m4v|mov|webm|avi|mkv))?$/
+    /^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|html|mp4|m4v|mov|webm|avi|mkv))?$/
   )
   return {
     id: match?.groups?.id ?? raw,
