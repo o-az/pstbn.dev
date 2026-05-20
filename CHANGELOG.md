@@ -1,5 +1,11 @@
 # pstbn.dev
 
+## 0.0.5
+
+### Patch Changes
+
+- [#3](https://github.com/o-az/pstbn.dev/pull/3) [`cdc4b4e`](https://github.com/o-az/pstbn.dev/commit/cdc4b4eb3fd028a99a2d30e51ce42ff022fa155c) Thanks [@o-az](https://github.com/o-az)! - Added support for `application/x-asciinema` content type
+
 ## 0.0.4
 
 ### Patch Changes
