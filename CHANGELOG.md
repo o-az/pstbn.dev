@@ -1,5 +1,12 @@
 # pstbn.dev
 
+## 0.0.6
+
+### Patch Changes
+
+- [#5](https://github.com/o-az/pstbn.dev/pull/5) [`d925fc0`](https://github.com/o-az/pstbn.dev/commit/d925fc08b693f3bacf15aad6391d04215f23922a) Thanks [@o-az](https://github.com/o-az)! - - Added support for `image/gif`, `image/jpeg`, `image/png`, and `image/webp`
+  - Fixed asciinema MIME type to `application/x-asciicast`
+
 ## 0.0.5
 
 ### Patch Changes
