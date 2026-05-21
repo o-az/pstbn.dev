@@ -2,4 +2,4 @@
 "pstbn.dev": patch
 ---
 
-Added support for `application/x-asciinema` content type
+Added support for `application/x-asciicast` content type
