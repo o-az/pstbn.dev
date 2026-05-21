@@ -105,10 +105,10 @@ app.get("/create", rateLimit, async context => {
 })
 
 const FORMAT_CONTENT_TYPES = {
-  json: "application/json; charset=utf-8",
   txt: "text/plain; charset=utf-8",
-  md: "text/markdown; charset=utf-8",
   html: "text/html; charset=utf-8",
+  md: "text/markdown; charset=utf-8",
+  json: "application/json; charset=utf-8",
   gif: "image/gif",
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
@@ -116,11 +116,11 @@ const FORMAT_CONTENT_TYPES = {
   webp: "image/webp",
   mp4: "video/mp4",
   m4v: "video/x-m4v",
-  mov: "video/quicktime",
   webm: "video/webm",
+  mov: "video/quicktime",
   avi: "video/x-msvideo",
   mkv: "video/x-matroska",
-  cast: "application/x-asciinema; charset=utf-8"
+  cast: "application/x-asciicast"
 } as const
 
 type PasteFormat = keyof typeof FORMAT_CONTENT_TYPES
