@@ -28,12 +28,11 @@ jobs:
         with:
           fetch-depth: 1
       - name: Run agent
-        uses: pullfrog/pullfrog@3beaa0fb16f67a689055eac8df88e71024e423b2 # v0.1.31
+        uses: pullfrog/pullfrog@v0
         with:
           prompt: ${{ inputs.prompt }}
         env:
           # add at least one provider API key
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
