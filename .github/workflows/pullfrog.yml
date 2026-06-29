@@ -24,11 +24,11 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 1
       - name: Run agent
-        uses: pullfrog/pullfrog@65e7f69dde116437a0876102b06e67f3633d192d # v0.1.30
+        uses: pullfrog/pullfrog@3beaa0fb16f67a689055eac8df88e71024e423b2 # v0.1.31
         with:
           prompt: ${{ inputs.prompt }}
         env:
