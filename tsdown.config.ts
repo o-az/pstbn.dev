@@ -12,7 +12,6 @@ export default defineConfig({
     all: true,
     enabled: true,
     extensions: true,
-    devExports: true,
     packageJson: true
   }
 })

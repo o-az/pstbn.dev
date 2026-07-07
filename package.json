@@ -10,7 +10,7 @@
     "url": "git+https://github.com/o-az/pstbn.dev.git"
   },
   "bin": {
-    "pstbn.dev": "./src/bin.ts"
+    "pstbn.dev": "./dist/bin.mjs"
   },
   "files": [
     "dist",
@@ -26,7 +26,7 @@
     "#wrangler.json": "./wrangler.json"
   },
   "exports": {
-    ".": "./src/bin.ts",
+    ".": "./dist/bin.mjs",
     "./*": "./*"
   },
   "publishConfig": {
