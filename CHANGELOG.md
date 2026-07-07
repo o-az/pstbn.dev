@@ -1,5 +1,11 @@
 # pstbn.dev
 
+## 0.0.9
+
+### Patch Changes
+
+- [#12](https://github.com/o-az/pstbn.dev/pull/12) [`01d4c8e`](https://github.com/o-az/pstbn.dev/commit/01d4c8eb3252098da256800137e0e15e9ab72fa5) Thanks [@o-az](https://github.com/o-az)! - Fixed `package.json#bin` by switching to js and no longer relying on `package.json#publishConfig.bin`
+
 ## 0.0.8
 
 ### Patch Changes
