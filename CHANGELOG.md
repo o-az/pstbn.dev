@@ -1,5 +1,11 @@
 # pstbn.dev
 
+## 0.0.8
+
+### Patch Changes
+
+- [#10](https://github.com/o-az/pstbn.dev/pull/10) [`9f95fd3`](https://github.com/o-az/pstbn.dev/commit/9f95fd32e4f1e5af159b76723515a47fea9c2b98) Thanks [@o-az](https://github.com/o-az)! - Updated dependencies
+
 ## 0.0.7
 
 ### Patch Changes
