@@ -2,4 +2,4 @@
 "pstbn.dev": patch
 ---
 
-Updated deps
+Updated deps Fixed CLI entrypoint double executing
