@@ -1,6 +1,6 @@
 {
   "name": "pstbn.dev",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Agent-first, simple, robust pastebin",
   "homepage": "https://pstbn.dev",
   "bin": {

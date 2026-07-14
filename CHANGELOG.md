@@ -1,5 +1,11 @@
 # pstbn.dev
 
+## 0.0.10
+
+### Patch Changes
+
+- [#14](https://github.com/o-az/pstbn.dev/pull/14) [`19ba2e6`](https://github.com/o-az/pstbn.dev/commit/19ba2e64370cf5e8207fe93aafaba85f17db4975) Thanks [@o-az](https://github.com/o-az)! - Updated deps Fixed CLI entrypoint double executing
+
 ## 0.0.9
 
 ### Patch Changes
