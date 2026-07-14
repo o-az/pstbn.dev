@@ -1,18 +1,9 @@
 {
   "file_types": {
-    "env": [".env", ".env.*"],
-    "tailwindcss": ["*.css"]
+    "env": [".env", ".env.*"]
   },
-  "hidden_files": ["**/.wrangler", "**/.tanstack", "**/.claude", "**/.cursor", "**/.agents"],
-  "file_scan_exclusions": [
-    "**/.wrangler",
-    "**/.tanstack",
-    "**/.vscode",
-    ".git",
-    "**/.claude",
-    "**/.cursor",
-    "**/.agents"
-  ],
+  "hidden_files": ["**/.wrangler", "**/.agents"],
+  "file_scan_exclusions": [".git", "**/.agents", "**/.vscode", "**/.wrangler"],
   "lsp": {
     "tombi": {
       "fetch": {
