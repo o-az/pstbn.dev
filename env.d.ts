@@ -1,6 +1,6 @@
 interface EnvironmentVariables extends Cloudflare.Env {
   readonly PORT: string
-  readonly NODE_ENV: "development" | "production" | "test"
+  readonly NODE_ENV: 'development' | 'production' | 'test'
 }
 
 // Node.js `process.env` auto-completion

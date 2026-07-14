@@ -40,7 +40,9 @@
         "operationId": "redirectToDocs",
         "summary": "Redirect to docs",
         "description": "Redirects to the interactive API documentation UI at /docs.",
-        "tags": ["Meta"],
+        "tags": [
+          "Meta"
+        ],
         "responses": {
           "302": {
             "description": "Redirect to /docs"
@@ -51,7 +53,9 @@
         "operationId": "createPasteRaw",
         "summary": "Create a paste from raw body",
         "description": "Creates a new paste using the raw request body as content. Optionally specify a language via the `lang` query parameter.",
-        "tags": ["Pastes"],
+        "tags": [
+          "Pastes"
+        ],
         "parameters": [
           {
             "name": "lang",
@@ -101,7 +105,9 @@
                     "description": "File to upload"
                   }
                 },
-                "required": ["file"]
+                "required": [
+                  "file"
+                ]
               }
             }
           }
@@ -114,7 +120,9 @@
                 "schema": {
                   "type": "string",
                   "description": "Absolute URL to the created paste, followed by a newline.",
-                  "examples": ["https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB\n"]
+                  "examples": [
+                    "https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB\n"
+                  ]
                 }
               }
             }
@@ -169,7 +177,9 @@
         "operationId": "createPasteQuery",
         "summary": "Create a paste via query parameters",
         "description": "Creates a new paste using the `content` query parameter. Supports optional base64 encoding and language tagging.",
-        "tags": ["Pastes"],
+        "tags": [
+          "Pastes"
+        ],
         "parameters": [
           {
             "name": "content",
@@ -186,7 +196,9 @@
             "description": "Set to `base64` to decode the `content` parameter from base64.",
             "schema": {
               "type": "string",
-              "enum": ["base64"]
+              "enum": [
+                "base64"
+              ]
             }
           },
           {
@@ -206,7 +218,9 @@
                 "schema": {
                   "type": "string",
                   "description": "Absolute URL to the created paste, followed by a newline.",
-                  "examples": ["https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB\n"]
+                  "examples": [
+                    "https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB\n"
+                  ]
                 }
               }
             }
@@ -240,7 +254,9 @@
         "operationId": "getPaste",
         "summary": "Get a paste by ID",
         "description": "Retrieves raw paste content. Use `Accept: application/json` or the `.json` suffix to return content as application/json. Use `.txt` or `.md` to force text/plain or text/markdown. Use `?meta=true` for metadata plus content as JSON.",
-        "tags": ["Pastes"],
+        "tags": [
+          "Pastes"
+        ],
         "parameters": [
           {
             "$ref": "#/components/parameters/PasteId"
@@ -284,10 +300,14 @@
                     },
                     {
                       "allOf": [
-                        { "$ref": "#/components/schemas/PasteMetadata" },
+                        {
+                          "$ref": "#/components/schemas/PasteMetadata"
+                        },
                         {
                           "type": "object",
-                          "required": ["content"],
+                          "required": [
+                            "content"
+                          ],
                           "properties": {
                             "content": {
                               "type": "string",
@@ -313,7 +333,9 @@
         "operationId": "listPastes",
         "summary": "List recent pastes",
         "description": "Returns a paginated list of paste metadata, ordered by creation time.",
-        "tags": ["Pastes"],
+        "tags": [
+          "Pastes"
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -340,14 +362,21 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["ok", "data", "meta"],
+                  "required": [
+                    "ok",
+                    "data",
+                    "meta"
+                  ],
                   "properties": {
                     "ok": {
                       "type": "boolean"
                     },
                     "data": {
                       "type": "object",
-                      "required": ["pastes", "cursor"],
+                      "required": [
+                        "pastes",
+                        "cursor"
+                      ],
                       "properties": {
                         "pastes": {
                           "type": "array",
@@ -356,7 +385,10 @@
                           }
                         },
                         "cursor": {
-                          "type": ["string", "null"],
+                          "type": [
+                            "string",
+                            "null"
+                          ],
                           "description": "Cursor for the next page of results. Null if there are no more results."
                         }
                       }
@@ -384,7 +416,9 @@
       "get": {
         "operationId": "healthCheck",
         "summary": "Health check",
-        "tags": ["Meta"],
+        "tags": [
+          "Meta"
+        ],
         "responses": {
           "200": {
             "description": "Server is healthy",
@@ -405,7 +439,9 @@
         "operationId": "getDocs",
         "summary": "API documentation UI",
         "description": "Renders an interactive API reference powered by Scalar.",
-        "tags": ["Meta"],
+        "tags": [
+          "Meta"
+        ],
         "responses": {
           "200": {
             "description": "HTML page with the API documentation UI",
@@ -425,7 +461,9 @@
         "operationId": "getSchema",
         "summary": "OpenAPI schema",
         "description": "Returns the raw OpenAPI 3.2.0 JSON schema for this API. Also available at `/openapi.json`.",
-        "tags": ["Meta"],
+        "tags": [
+          "Meta"
+        ],
         "responses": {
           "200": {
             "description": "The OpenAPI specification document",
@@ -453,46 +491,73 @@
           "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
           "minLength": 26,
           "maxLength": 26,
-          "examples": ["01KMEND534DJFKS65C2HTC5VBB"]
+          "examples": [
+            "01KMEND534DJFKS65C2HTC5VBB"
+          ]
         }
       }
     },
     "schemas": {
       "PasteMetadata": {
         "type": "object",
-        "required": ["id", "language", "size", "createdAt"],
+        "required": [
+          "id",
+          "language",
+          "size",
+          "createdAt"
+        ],
         "properties": {
           "id": {
             "type": "string",
             "description": "ULID of the paste",
-            "examples": ["01KMEND534DJFKS65C2HTC5VBB"]
+            "examples": [
+              "01KMEND534DJFKS65C2HTC5VBB"
+            ]
           },
           "language": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Language tag for syntax highlighting",
-            "examples": ["rust", "json", null]
+            "examples": [
+              "rust",
+              "json",
+              null
+            ]
           },
           "size": {
             "type": "integer",
             "description": "Size of the paste content in bytes",
-            "examples": [42]
+            "examples": [
+              42
+            ]
           },
           "createdAt": {
             "type": "string",
             "format": "date-time",
             "description": "ISO 8601 timestamp of when the paste was created",
-            "examples": ["2026-03-24T00:55:06.596Z"]
+            "examples": [
+              "2026-03-24T00:55:06.596Z"
+            ]
           },
           "contentType": {
             "type": "string",
             "description": "MIME type of the paste content, auto-detected from binary signatures or request headers",
-            "examples": ["text/plain", "image/png", "application/octet-stream"]
+            "examples": [
+              "text/plain",
+              "image/png",
+              "application/octet-stream"
+            ]
           }
         }
       },
       "Error": {
         "type": "object",
-        "required": ["ok", "error"],
+        "required": [
+          "ok",
+          "error"
+        ],
         "properties": {
           "ok": {
             "type": "boolean",

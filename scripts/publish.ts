@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 
-import * as Bun from "bun"
-import NodeUtil from "node:util"
-import NodeProcess from "node:process"
+import * as Bun from 'bun'
+import NodeUtil from 'node:util'
+import NodeProcess from 'node:process'
 
-import pkgJson from "#package.json" with { type: "json" }
+import pkgJson from '#package.json' with { type: 'json' }
 
 const { values } = NodeUtil.parseArgs({
   args: Bun.argv.slice(2),
@@ -13,15 +13,15 @@ const { values } = NodeUtil.parseArgs({
   allowNegative: true,
   allowPositionals: true,
   options: {
-    "dry-run": {
-      type: "boolean",
+    'dry-run': {
+      type: 'boolean',
       default: false,
       multiple: false
     },
     registry: {
-      type: "string",
+      type: 'string',
       multiple: true,
-      default: ["https://registry.npmjs.org"]
+      default: ['https://registry.npmjs.org']
     }
   }
 })
@@ -29,7 +29,7 @@ const { values } = NodeUtil.parseArgs({
 async function build() {
   const { stderr, stdout, exitCode } = await Bun.$ /* sh */ `bun run build`.env({
     ...Bun.env,
-    NODE_ENV: "production"
+    NODE_ENV: 'production'
   })
 
   if (exitCode !== 0) {
@@ -38,13 +38,13 @@ async function build() {
   }
 
   console.info(stdout.toString())
-  console.info("Build completed")
+  console.info('Build completed')
 }
 
 async function pack() {
   const { stderr, stdout, exitCode } = await Bun.$ /* sh */ `bun pm pack --ignore-scripts`.env({
     ...Bun.env,
-    NODE_ENV: "production"
+    NODE_ENV: 'production'
   })
 
   if (exitCode !== 0) {
@@ -53,7 +53,7 @@ async function pack() {
   }
 
   console.info(stdout.toString())
-  console.info("Pack completed")
+  console.info('Pack completed')
 }
 
 async function publish(registry: string) {
@@ -62,13 +62,13 @@ async function publish(registry: string) {
   const packedFile = `./${pkgJson.name}-${pkgJson.version}.tgz`
 
   const isPrerelease =
-    pkgJson.version.includes("alpha") ||
-    pkgJson.version.includes("beta") ||
-    pkgJson.version.includes("rc")
+    pkgJson.version.includes('alpha') ||
+    pkgJson.version.includes('beta') ||
+    pkgJson.version.includes('rc')
 
   const extraArgs: string[] = []
-  if (values["dry-run"]) extraArgs.push("--dry-run")
-  if (isPrerelease) extraArgs.push("--tag=next")
+  if (values['dry-run']) extraArgs.push('--dry-run')
+  if (isPrerelease) extraArgs.push('--tag=next')
 
   const { stderr, stdout, exitCode } = await Bun.$ /* sh */ `
     npm publish ${packedFile} \
@@ -78,13 +78,13 @@ async function publish(registry: string) {
       ${extraArgs}`
     .env({
       ...Bun.env,
-      NODE_ENV: "production"
+      NODE_ENV: 'production'
     })
     .nothrow()
 
   if (exitCode !== 0) {
     const stderrStr = stderr.toString()
-    if (stderrStr.includes("You cannot publish over the previously published versions")) {
+    if (stderrStr.includes('You cannot publish over the previously published versions')) {
       console.info(`Version ${pkgJson.version} already published, skipping`)
       return
     }
@@ -94,19 +94,19 @@ async function publish(registry: string) {
 
   console.info(stdout.toString())
   console.info(`New tag: ${pkgJson.name}@${pkgJson.version}`)
-  console.info("Published successfully")
+  console.info('Published successfully')
 }
 
 async function preChecks() {
   const npmVersion = (
-    await Bun.$ /* sh */ `npm --version`.env({ ...Bun.env, NODE_ENV: "production" }).text()
+    await Bun.$ /* sh */ `npm --version`.env({ ...Bun.env, NODE_ENV: 'production' }).text()
   ).trim()
 
-  const order = Bun.semver.order(npmVersion, "11.5.1")
+  const order = Bun.semver.order(npmVersion, '11.5.1')
   if (order !== -1) return
 
-  console.error("GH Publisher requires npm version 11.5.1 or higher")
-  console.info("See https://docs.npmjs.com/trusted-publishers")
+  console.error('GH Publisher requires npm version 11.5.1 or higher')
+  console.info('See https://docs.npmjs.com/trusted-publishers')
   NodeProcess.exit(1)
 }
 

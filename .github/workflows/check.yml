@@ -2,6 +2,9 @@ name: Checks
 
 on:
   push:
+    branches: # all but main
+      - '*'
+      - '!main'
   pull_request:
 
 defaults:
@@ -9,38 +12,25 @@ defaults:
     shell: bash
 
 env:
-  ACTIONS_RUNNER_DEBUG: true
+  NODE_ENV: 'production'
+  MISE_EXPERIMENTAL: true
   WRANGLER_SEND_METRICS: false
+  NODE_OPTIONS: '--disable-warning=ExperimentalWarning --disable-warning=DeprecationWarning'
+
+permissions: {}
 
 jobs:
   check:
     name: Check
-    runs-on: ubuntu-latest
+    runs-on: ['ubuntu-latest']
+    timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
-      - name: "🔑 Checkout"
+      - name: '🔑 Checkout'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: "Setup Node.js"
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: "latest"
+          persist-credentials: false
 
-      - name: "🐰 Setup Bun"
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: latest
-
-      - name: "Install Dependencies"
-        run: bun install --frozen-lockfile
-
-      - name: "Format & Lint & Type Check"
-        run: |
-          bun --bun oxfmt --config oxfmt.config.ts . --check
-          bun --bun oxlint --config='oxlint.config.ts' --max-warnings=0
-          bun tsgo --project tsconfig.json --noEmit
-
-      - name: "Build"
-        run: bun run build
-
-      - name: "Preview Release"
-        run: bun x pkg-pr-new publish .
+      - name: Checks
+        uses: ./.github/actions/checks

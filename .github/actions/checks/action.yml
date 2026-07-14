@@ -1,0 +1,18 @@
+name: Checks
+description: 'Run format, lint, type check, and build checks.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Setup mise 🐭'
+      uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+      with:
+        cache: false
+
+    - name: 'Install Dependencies'
+      shell: bash
+      run: bun install --frozen-lockfile
+
+    - name: 'Run CI Tasks'
+      shell: bash
+      run: mise ci

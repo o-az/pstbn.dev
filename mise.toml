@@ -1,10 +1,58 @@
 #:schema https://mise.en.dev/schema/mise.json
 
 [settings]
+color = true
 experimental = true
+color_theme = "charm"
+minimum_release_age_excludes = [
+  "hk",
+  "pkl",
+  "bun",
+  "node",
+  "npm:oxfmt",
+  "npm:oxlint"
+]
+
+[env]
+HK_MISE = 1
+WRANGLER_SEND_METRICS = false
 
 [tools]
+fd = "latest"
+hk = "latest"
+pkl = "latest"
 bun = "latest"
 node = "latest"
 tombi = "latest"
+shfmt = "latest"
+ghalint = "latest"
+gitleaks = "latest"
+shellcheck = "latest"
+actionlint = "latest"
+betterleaks = "latest"
 cloudflared = "latest"
+"npm:oxfmt" = "latest"
+"npm:oxlint" = "latest"
+
+[hooks]
+postinstall = "hk install --mise"
+
+[tasks.check]
+description = "format & lint files"
+run = "hk fix --all"
+
+[tasks.dev]
+description = "start Vite dev"
+run = "bun vite dev --mode='development' --config='vite.config.ts'"
+
+[tasks.build]
+description = "build TS project"
+run = "bun tsdown --config='tsdown.config.ts'"
+
+[tasks.typecheck]
+description = "type check JS/TS files"
+run = "bun tsc --project tsconfig.json --noEmit"
+
+[tasks.ci]
+description = "run CI tasks"
+run = "hk fix --all"

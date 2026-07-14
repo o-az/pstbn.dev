@@ -1,7 +1,7 @@
-import * as z from "zod/mini"
-import { ulid } from "@std/ulid"
+import * as z from 'zod/mini'
+import { ulid } from '@std/ulid'
 
-import { sniffFile } from "#utilities.ts"
+import { sniffFile } from '#utilities.ts'
 
 const PasteMetadataSchema = z.object({
   id: z.string(),

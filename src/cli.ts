@@ -1,27 +1,27 @@
-import { Cli, z } from "incur"
+import { Cli, z } from 'incur'
 
-import { createPaste, getPasteContent, getPasteMetadata, listPastes } from "#storage.ts"
+import { createPaste, getPasteContent, getPasteMetadata, listPastes } from '#storage.ts'
 
-const BASE_URL = process.env.PSTBN_URL ?? "https://pstbn.dev"
+const BASE_URL = process.env.PSTBN_URL ?? 'https://pstbn.dev'
 
-export const cli = Cli.create("pstbn", {
+export const cli = Cli.create('pstbn', {
   version: process.env.APP_VERSION,
-  description: "Agent-first, simple, robust pastebin",
+  description: 'Agent-first, simple, robust pastebin',
   vars: z.object({
     r2: z.custom<R2Bucket>().optional(),
     kv: z.custom<KVNamespace>().optional()
   })
 })
-  .command("create", {
-    description: "Create a new paste",
+  .command('create', {
+    description: 'Create a new paste',
     options: z.object({
       language: z
         .string()
         .optional()
-        .describe("Language for syntax highlighting (e.g. json, sh, rust)"),
-      content: z.string().optional().describe("Paste content (alternative to piping via stdin)")
+        .describe('Language for syntax highlighting (e.g. json, sh, rust)'),
+      content: z.string().optional().describe('Paste content (alternative to piping via stdin)')
     }),
-    alias: { language: "l", content: "c" },
+    alias: { language: 'l', content: 'c' },
     output: z.object({
       id: z.string().optional(),
       language: z.string().nullable().optional(),
@@ -30,18 +30,18 @@ export const cli = Cli.create("pstbn", {
       url: z.string()
     }),
     examples: [
-      { options: { content: "hello world" }, description: "Create a simple paste" },
+      { options: { content: 'hello world' }, description: 'Create a simple paste' },
       {
-        options: { content: "const x = 1", language: "ts" },
-        description: "Create a paste with language"
+        options: { content: 'const x = 1', language: 'ts' },
+        description: 'Create a paste with language'
       }
     ],
     run: async context => {
       const content = context.options.content
       if (!content)
         return context.error({
-          code: "MISSING_CONTENT",
-          message: "Provide content via --content or pipe via stdin",
+          code: 'MISSING_CONTENT',
+          message: 'Provide content via --content or pipe via stdin',
           retryable: true
         })
 
@@ -57,50 +57,50 @@ export const cli = Cli.create("pstbn", {
           { ...paste, url: `/${paste.id}` },
           {
             cta: {
-              description: "Next steps:",
-              commands: [{ command: `get ${paste.id}`, description: "View the paste" }]
+              description: 'Next steps:',
+              commands: [{ command: `get ${paste.id}`, description: 'View the paste' }]
             }
           }
         )
       }
 
       const lang = context.options.language
-      const url = new URL(lang ? `?lang=${lang}` : "/", BASE_URL)
+      const url = new URL(lang ? `?lang=${lang}` : '/', BASE_URL)
       const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain" },
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
         body: content
       })
 
       if (!response.ok) {
         const body = await response.text()
-        return context.error({ code: "CREATE_FAILED", message: body || "Failed to create paste" })
+        return context.error({ code: 'CREATE_FAILED', message: body || 'Failed to create paste' })
       }
 
       const pasteUrl = (await response.text()).trim()
-      const id = pasteUrl.split("/").pop()
+      const id = pasteUrl.split('/').pop()
       return context.ok(
         { url: pasteUrl },
         {
           cta: {
-            description: "Next steps:",
-            commands: [{ command: `get ${id}`, description: "View the paste" }]
+            description: 'Next steps:',
+            commands: [{ command: `get ${id}`, description: 'View the paste' }]
           }
         }
       )
     }
   })
-  .command("get", {
-    description: "Get a paste by ID",
+  .command('get', {
+    description: 'Get a paste by ID',
     args: z.object({
-      id: z.string().describe("Paste ID")
+      id: z.string().describe('Paste ID')
     }),
     options: z.object({
-      meta: z.coerce.boolean().optional().describe("Return metadata instead of content")
+      meta: z.coerce.boolean().optional().describe('Return metadata instead of content')
     }),
     examples: [
-      { args: { id: "01ABC123" }, description: "Get paste content" },
-      { args: { id: "01ABC123" }, options: { meta: true }, description: "Get paste metadata" }
+      { args: { id: '01ABC123' }, description: 'Get paste content' },
+      { args: { id: '01ABC123' }, options: { meta: true }, description: 'Get paste metadata' }
     ],
     run: async context => {
       const { kv, r2 } = context.var
@@ -110,7 +110,7 @@ export const cli = Cli.create("pstbn", {
           const metadata = await getPasteMetadata(kv, context.args.id)
           if (!metadata)
             return context.error({
-              code: "NOT_FOUND",
+              code: 'NOT_FOUND',
               message: `Paste ${context.args.id} not found`,
               retryable: false
             })
@@ -120,7 +120,7 @@ export const cli = Cli.create("pstbn", {
         const response = await fetch(new URL(`/${context.args.id}?meta=true`, BASE_URL))
         if (!response.ok)
           return context.error({
-            code: "NOT_FOUND",
+            code: 'NOT_FOUND',
             message: `Paste ${context.args.id} not found`,
             retryable: false
           })
@@ -132,7 +132,7 @@ export const cli = Cli.create("pstbn", {
         const object = await getPasteContent(r2, context.args.id)
         if (!object)
           return context.error({
-            code: "NOT_FOUND",
+            code: 'NOT_FOUND',
             message: `Paste ${context.args.id} not found`,
             retryable: false
           })
@@ -141,11 +141,11 @@ export const cli = Cli.create("pstbn", {
       }
 
       const response = await fetch(new URL(`/${context.args.id}`, BASE_URL), {
-        headers: { Accept: "text/plain" }
+        headers: { Accept: 'text/plain' }
       })
       if (!response.ok)
         return context.error({
-          code: "NOT_FOUND",
+          code: 'NOT_FOUND',
           message: `Paste ${context.args.id} not found`,
           retryable: false
         })
@@ -153,13 +153,13 @@ export const cli = Cli.create("pstbn", {
       return { content: await response.text() }
     }
   })
-  .command("list", {
-    description: "List recent pastes",
+  .command('list', {
+    description: 'List recent pastes',
     options: z.object({
-      limit: z.coerce.number().default(20).describe("Max results to return"),
-      cursor: z.string().optional().describe("Pagination cursor from previous response")
+      limit: z.coerce.number().default(20).describe('Max results to return'),
+      cursor: z.string().optional().describe('Pagination cursor from previous response')
     }),
-    alias: { limit: "n" },
+    alias: { limit: 'n' },
     output: z.object({
       pastes: z.array(
         z.object({
@@ -180,7 +180,7 @@ export const cli = Cli.create("pstbn", {
         })
 
       const params = new URLSearchParams({ limit: String(context.options.limit) })
-      if (context.options.cursor) params.set("cursor", context.options.cursor)
+      if (context.options.cursor) params.set('cursor', context.options.cursor)
 
       const url = new URL(`/list`, BASE_URL)
       url.search = params.toString()
@@ -201,5 +201,3 @@ export const cli = Cli.create("pstbn", {
       return { pastes: data.pastes, cursor: data.cursor }
     }
   })
-
-if (import.meta.main) await cli.serve()

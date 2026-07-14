@@ -5,7 +5,11 @@
     "noEmit": true,
     "allowJs": true,
     "checkJs": true,
-    "lib": ["DOM", "ESNext", "DOM.Iterable"],
+    "lib": [
+      "DOM",
+      "ESNext",
+      "DOM.Iterable"
+    ],
     "target": "ESNext",
     "module": "ESNext",
     "skipLibCheck": true,
@@ -28,7 +32,12 @@
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["bun", "node", "typed-query-selector/strict", "@cloudflare/workers-types"]
+    "types": [
+      "bun",
+      "node",
+      "typed-query-selector/strict",
+      "@cloudflare/workers-types"
+    ]
   },
   "files": [
     "env.d.ts",
@@ -39,6 +48,12 @@
     "tsdown.config.ts",
     "worker-configuration.d.ts"
   ],
-  "include": ["./src/**/*"],
-  "exclude": ["_", "dist", "node_modules"]
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": [
+    "_",
+    "dist",
+    "node_modules"
+  ]
 }

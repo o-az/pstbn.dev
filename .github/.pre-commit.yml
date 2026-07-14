@@ -10,4 +10,4 @@ repos:
     rev: v8.30.0
     hooks:
       - id: gitleaks
-        args: ["--config", ".github/.gitleaks.toml"]
+        args: ['--config', '.github/.gitleaks.toml']

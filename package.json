@@ -3,12 +3,6 @@
   "version": "0.0.9",
   "description": "Agent-first, simple, robust pastebin",
   "homepage": "https://pstbn.dev",
-  "license": "MIT",
-  "author": "omar <code@omar.mov>",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/o-az/pstbn.dev.git"
-  },
   "bin": {
     "pstbn.dev": "./dist/bin.mjs"
   },
@@ -29,16 +23,6 @@
     ".": "./dist/bin.mjs",
     "./*": "./*"
   },
-  "publishConfig": {
-    "bin": {
-      "pstbn.dev": "./dist/bin.mjs"
-    },
-    "exports": {
-      ".": "./dist/bin.mjs",
-      "./*": "./*"
-    },
-    "access": "public"
-  },
   "scripts": {
     "dev": "vite dev --mode='development' --config='vite.config.ts'",
     "build": "tsdown --config='tsdown.config.ts'",
@@ -48,7 +32,7 @@
     "lint": "oxlint --config='oxlint.config.ts' --type-aware --type-check --fix-dangerously",
     "check": "bun format && bun lint",
     "deploy": "NODE_ENV='production' wrangler deploy",
-    "check:types": "bun tsgo --project tsconfig.json --noEmit",
+    "check:types": "bun tsc --project tsconfig.json --noEmit",
     "types": "wrangler types --env-interface CloudflareBindings",
     "changeset:version": "changeset version && bun format",
     "changeset:publish": "changeset publish",
@@ -57,44 +41,37 @@
     "publish:manual": "bun ./scripts/publish.ts --registry='https://registry.npmjs.org'",
     "prepublishOnly": "bun run build",
     "prepack": "cp .github/README.md .",
-    "postpack": "rm README.md",
-    "prepare": "simple-git-hooks"
+    "postpack": "rm README.md"
   },
   "dependencies": {
-    "hono": "^4.12.28",
-    "incur": "^0.4.11",
+    "hono": "^4.12.30",
+    "incur": "^0.4.13",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@arethetypeswrong/core": "^0.18.4",
+    "@arethetypeswrong/core": "^0.18.5",
     "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.0",
-    "@cloudflare/vite-plugin": "^1.43.0",
-    "@cloudflare/workers-types": "^5.20260707.1",
-    "@j178/prek": "^0.4.8",
-    "@scalar/api-reference": "^1.62.4",
-    "@scalar/types": "^0.16.1",
+    "@cloudflare/vite-plugin": "^1.44.0",
+    "@cloudflare/workers-types": "^5.20260714.1",
+    "@scalar/api-reference": "^1.62.5",
+    "@scalar/types": "^0.16.2",
     "@std/ulid": "npm:@jsr/std__ulid",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "^1.3.14",
-    "@types/node": "^26.1.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260706.1",
-    "@vitejs/devtools": "^0.3.4",
-    "oxfmt": "^0.58.0",
-    "oxlint": "^1.73.0",
+    "@types/node": "^26.1.1",
+    "@vitejs/devtools": "^0.4.1",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.74.0",
     "oxlint-tsgolint": "^0.24.0",
     "publint": "^0.3.21",
-    "simple-git-hooks": "^2.13.1",
-    "tsdown": "^0.22.3",
+    "tsdown": "^0.22.7",
     "typed-query-selector": "^2.12.2",
-    "typescript": "^6.0.3",
-    "vite": "^8.1.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.4",
     "vite-plugin-devtools-json": "^1.0.0",
-    "vite-plugin-inspect": "^11.4.1",
-    "wrangler": "^4.107.0"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "bun prek run --all-files --config='.github/.pre-commit.yml' && bun check"
+    "vite-plugin-inspect": "^12.0.2",
+    "wrangler": "^4.110.0"
   },
   "packageManager": "bun@1.3.14",
   "inlinedDependencies": {
@@ -102,10 +79,14 @@
   },
   "readme": ".github/README.md",
   "trustedDependencies": [
-    "@j178/prek",
     "core-js",
     "esbuild",
-    "simple-git-hooks",
     "workerd"
-  ]
+  ],
+  "license": "MIT",
+  "author": "omar <code@omar.mov>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/o-az/pstbn.dev.git"
+  }
 }
