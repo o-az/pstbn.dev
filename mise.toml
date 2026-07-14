@@ -4,37 +4,44 @@
 color = true
 experimental = true
 color_theme = "charm"
+minimum_release_age_excludes = ["hk", "pkl", "bun", "node", "npm:oxfmt", "npm:oxlint"]
+
+[env]
+HK_MISE = 1
+WRANGLER_SEND_METRICS = false
 
 [tools]
 fd = "latest"
+hk = "latest"
+pkl = "latest"
 bun = "latest"
 node = "latest"
 tombi = "latest"
 shfmt = "latest"
+ghalint = "latest"
+gitleaks = "latest"
 shellcheck = "latest"
+actionlint = "latest"
+betterleaks = "latest"
 cloudflared = "latest"
+"npm:oxfmt" = "latest"
+"npm:oxlint" = "latest"
 
-[shell_alias]
-oxfmt = "./node_modules/.bin/oxfmt"
-oxlint = "./node_modules/.bin/oxlint"
-
-[tasks.format]
-description = "format files"
-run = '''
-shfmt --write --apply-ignore .
-./node_modules/.bin/oxfmt format . --write
-tombi format
-'''
-
-[tasks.lint]
-description = "lint files"
-run = '''
-tombi lint
-fd --extension sh --exclude skills --exec shellcheck
-node_modules/.bin/oxlint --config='oxlint.config.ts' --type-aware --type-check --fix-dangerously
-'''
+[hooks]
+postinstall = "hk install --mise"
 
 [tasks.check]
 description = "format & lint files"
-depends = ["format"]
-depends_post = ["lint"]
+run = "hk fix --all"
+
+[tasks.build]
+description = "build TS project"
+run = 'bun vite build --mode="production" --config="vite.config.ts"'
+
+[tasks.typecheck]
+description = "type check JS/TS files"
+run = "bun tsgo --project tsconfig.json --noEmit"
+
+[tasks.ci]
+description = "run CI tasks"
+run = "hk fix --all"

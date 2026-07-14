@@ -201,5 +201,3 @@ export const cli = Cli.create("pstbn", {
       return { pastes: data.pastes, cursor: data.cursor }
     }
   })
-
-if (import.meta.main) await cli.serve()
