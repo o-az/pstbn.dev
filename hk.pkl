@@ -24,7 +24,7 @@ local linters = new Mapping<String, Step> {
   }
   ["tombi"] = Builtins.tombi
   ["oxlint"] = (Builtins.ox_lint) {
-    check = "oxlint --config='oxlint.config.ts' --type-aware --type-check"
+    check = "bun oxlint --config='oxlint.config.ts' --type-aware --type-check"
   }
   ["shellcheck"] = Builtins.shellcheck
 }
@@ -34,12 +34,9 @@ local formatters = new Mapping<String, Step> {
     glob = List("*.pkl", "**/*.pkl")
   }
   ["shfmt"] = Builtins.shfmt
-  ["just-fmt"] = (Builtins.just_format) {
-    glob = List("justfile", "**/*.just")
-    check = "just --fmt --check --unstable"
-    fix = "just --fmt --unstable"
+  ["oxfmt"] = (Builtins.oxfmt) {
+    fix = "bun oxfmt --config='oxfmt.config.ts' --write"
   }
-  ["oxfmt"] = Builtins.oxfmt
   ["tombi-format"] = Builtins.tombi_format
 }
 

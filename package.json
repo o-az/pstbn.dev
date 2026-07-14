@@ -74,7 +74,7 @@
     "publint": "^0.3.21",
     "tsdown": "^0.22.7",
     "typed-query-selector": "^2.12.2",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.1.4",
     "vite-plugin-devtools-json": "^1.0.0",
     "vite-plugin-inspect": "^12.0.2",

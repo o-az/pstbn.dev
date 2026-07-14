@@ -4,7 +4,14 @@
 color = true
 experimental = true
 color_theme = "charm"
-minimum_release_age_excludes = ["hk", "pkl", "bun", "node", "npm:oxfmt", "npm:oxlint"]
+minimum_release_age_excludes = [
+  "hk",
+  "pkl",
+  "bun",
+  "node",
+  "npm:oxfmt",
+  "npm:oxlint"
+]
 
 [env]
 HK_MISE = 1
@@ -34,9 +41,13 @@ postinstall = "hk install --mise"
 description = "format & lint files"
 run = "hk fix --all"
 
+[tasks.dev]
+description = "start Vite dev"
+run = "bun vite dev --mode='development' --config='vite.config.ts'"
+
 [tasks.build]
 description = "build TS project"
-run = 'bun vite build --mode="production" --config="vite.config.ts"'
+run = "bun tsdown --config='tsdown.config.ts'"
 
 [tasks.typecheck]
 description = "type check JS/TS files"
