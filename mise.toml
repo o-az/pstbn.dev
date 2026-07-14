@@ -4,14 +4,7 @@
 color = true
 experimental = true
 color_theme = "charm"
-minimum_release_age_excludes = [
-  "hk",
-  "pkl",
-  "bun",
-  "node",
-  "npm:oxfmt",
-  "npm:oxlint"
-]
+minimum_release_age_excludes = ["hk", "pkl", "bun", "node", "npm:oxfmt", "npm:oxlint"]
 
 [env]
 HK_MISE = 1
