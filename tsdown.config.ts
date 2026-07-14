@@ -1,12 +1,13 @@
-import { defineConfig } from "tsdown"
+import { defineConfig } from 'tsdown'
 
 export default defineConfig({
   dts: true,
   clean: true,
-  format: "esm",
+  format: 'esm',
   publint: true,
-  target: "esnext",
-  entry: ["./src/bin.ts"],
+  target: 'esnext',
+  entry: ['./src/bin.ts'],
+
   exports: {
     bin: true,
     all: true,

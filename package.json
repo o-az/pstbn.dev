@@ -3,12 +3,6 @@
   "version": "0.0.9",
   "description": "Agent-first, simple, robust pastebin",
   "homepage": "https://pstbn.dev",
-  "license": "MIT",
-  "author": "omar <code@omar.mov>",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/o-az/pstbn.dev.git"
-  },
   "bin": {
     "pstbn.dev": "./dist/bin.mjs"
   },
@@ -38,7 +32,7 @@
     "lint": "oxlint --config='oxlint.config.ts' --type-aware --type-check --fix-dangerously",
     "check": "bun format && bun lint",
     "deploy": "NODE_ENV='production' wrangler deploy",
-    "check:types": "bun tsgo --project tsconfig.json --noEmit",
+    "check:types": "bun tsc --project tsconfig.json --noEmit",
     "types": "wrangler types --env-interface CloudflareBindings",
     "changeset:version": "changeset version && bun format",
     "changeset:publish": "changeset publish",
@@ -66,7 +60,6 @@
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "^1.3.14",
     "@types/node": "^26.1.1",
-    "@typescript/native-preview": "^7.0.0-dev.20260707.2",
     "@vitejs/devtools": "^0.4.1",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
@@ -89,5 +82,11 @@
     "core-js",
     "esbuild",
     "workerd"
-  ]
+  ],
+  "license": "MIT",
+  "author": "omar <code@omar.mov>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/o-az/pstbn.dev.git"
+  }
 }

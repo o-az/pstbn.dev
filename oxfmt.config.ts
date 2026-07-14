@@ -1,30 +1,42 @@
-import { defineConfig } from "oxfmt"
+import { defineConfig } from 'oxfmt'
 
 export default defineConfig({
   ignorePatterns: [
-    "**/_/**",
-    ".agents",
-    ".cursor",
-    "**/dist/**",
-    "**/node_modules/**",
-    "worker-configuration.d.ts"
+    '**/_/**',
+    '.agents',
+    '**/dist/**',
+    '**/node_modules/**',
+    'worker-configuration.d.ts'
   ],
+  jsdoc: true,
   semi: false,
   enabled: true,
   lineWidth: 100,
   indentWidth: 2,
   printWidth: 100,
-  proseWrap: "never",
-  arrowParens: "avoid",
+  singleQuote: true,
+  proseWrap: 'never',
+  arrowParens: 'avoid',
   jsxSingleQuote: true,
   bracketSpacing: true,
-  indentStyle: "space",
-  quoteStyle: "single",
-  trailingComma: "none",
+  indentStyle: 'space',
+  quoteStyle: 'single',
+  trailingComma: 'none',
   bracketSameLine: true,
+  sortPackageJson: false,
+  quoteProps: 'as-needed',
   insertFinalNewline: true,
-  attributePosition: "auto",
+  attributePosition: 'auto',
   indentScriptAndStyle: true,
   singleAttributePerLine: true,
-  selfCloseVoidElements: "never"
+  selfCloseVoidElements: 'never',
+  embeddedLanguageFormatting: 'auto',
+  overrides: [
+    {
+      files: ['**/*.json', '**/*.json'],
+      options: {
+        printWidth: 1
+      }
+    }
+  ]
 })

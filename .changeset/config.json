@@ -7,6 +7,14 @@
   "ignore": [],
   "linked": [],
   "updateInternalDependencies": "patch",
-  "privatePackages": { "version": true, "tag": false },
-  "changelog": ["@changesets/changelog-github", { "repo": "o-az/pstbn.dev" }]
+  "privatePackages": {
+    "version": true,
+    "tag": false
+  },
+  "changelog": [
+    "@changesets/changelog-github",
+    {
+      "repo": "o-az/pstbn.dev"
+    }
+  ]
 }

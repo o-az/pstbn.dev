@@ -1,25 +1,25 @@
-import { html, raw } from "hono/html"
-import type { ApiReferenceConfigurationWithMultipleSources } from "@scalar/types/api-reference"
+import { html, raw } from 'hono/html'
+import type { ApiReferenceConfigurationWithMultipleSources } from '@scalar/types/api-reference'
 
-import packageJSON from "#package.json" with { type: "json" }
+import packageJSON from '#package.json' with { type: 'json' }
 
 type ScalarConfig = (baseUrl: string) => Partial<ApiReferenceConfigurationWithMultipleSources>
 
 const getScalarConfig: ScalarConfig = baseUrl => ({
-  url: "/schema",
-  theme: "saturn",
-  layout: "modern",
+  url: '/schema',
+  theme: 'saturn',
+  layout: 'modern',
   telemetry: false,
   hideModels: true,
   hideClientButton: false,
   title: packageJSON.name,
   expandAllResponses: true,
-  showDeveloperTools: "never",
-  documentDownloadType: "json",
-  operationTitleSource: "path",
-  sources: [{ url: "/schema", default: true }],
-  servers: [{ url: baseUrl, description: "Current" }],
-  defaultHttpClient: { targetKey: "shell", clientKey: "curl" },
+  showDeveloperTools: 'never',
+  documentDownloadType: 'json',
+  operationTitleSource: 'path',
+  sources: [{ url: '/schema', default: true }],
+  servers: [{ url: baseUrl, description: 'Current' }],
+  defaultHttpClient: { targetKey: 'shell', clientKey: 'curl' },
   hiddenClients: {
     c: true,
     clojure: true,
@@ -31,7 +31,7 @@ const getScalarConfig: ScalarConfig = baseUrl => ({
     java: true,
     js: true,
     kotlin: true,
-    node: ["axios", "ofetch", "undici"],
+    node: ['axios', 'ofetch', 'undici'],
     objc: true,
     ocaml: true,
     php: true,

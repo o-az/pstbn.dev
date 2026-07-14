@@ -1,16 +1,38 @@
 {
   "file_types": {
-    "env": [".env", ".env.*"]
+    "env": [
+      ".env",
+      ".env.*"
+    ]
   },
-  "hidden_files": ["**/.wrangler", "**/.agents"],
-  "file_scan_exclusions": [".git", "**/.agents", "**/.vscode", "**/.wrangler"],
+  "hidden_files": [
+    "**/.wrangler",
+    "**/.agents"
+  ],
+  "file_scan_exclusions": [
+    ".git",
+    "**/.agents",
+    "**/.vscode",
+    "**/.wrangler"
+  ],
+  "language_servers": [
+    "tsgo",
+    "tombi",
+    "oxfmt",
+    "oxlint",
+    "markdown-oxide",
+    "json-language-server"
+  ],
   "lsp": {
     "tombi": {
       "fetch": {
         "pre_release": true
       },
       "binary": {
-        "arguments": ["lsp", "-v"],
+        "arguments": [
+          "lsp",
+          "-v"
+        ],
         "env": {
           "NO_COLOR": "true"
         },
@@ -41,7 +63,9 @@
   "languages": {
     "TOML": {
       "format_on_save": "on",
-      "language_servers": ["tombi"],
+      "language_servers": [
+        "tombi"
+      ],
       "show_edit_predictions": false,
       "formatter": {
         "language_server": {
@@ -64,7 +88,9 @@
     },
     "HTML": {
       "format_on_save": "on",
-      "language_servers": ["oxc"],
+      "language_servers": [
+        "oxc"
+      ],
       "prettier": {
         "allowed": false
       },
@@ -77,7 +103,13 @@
       ]
     },
     "Markdown": {
-      "language_servers": ["typescript-language-server", "oxfmt", "oxlint", "markdown-oxide"],
+      "language_servers": [
+        "tsgo",
+        "!typescript-language-server",
+        "oxfmt",
+        "oxlint",
+        "markdown-oxide"
+      ],
       "format_on_save": "on",
       "prettier": {
         "allowed": false
@@ -92,7 +124,11 @@
     },
     "JSON": {
       "format_on_save": "on",
-      "language_servers": ["json-language-server", "oxfmt", "oxlint"],
+      "language_servers": [
+        "json-language-server",
+        "oxfmt",
+        "oxlint"
+      ],
       "prettier": {
         "allowed": false
       },
@@ -106,7 +142,11 @@
     },
     "JSONC": {
       "format_on_save": "on",
-      "language_servers": ["json-language-server", "oxfmt", "oxlint"],
+      "language_servers": [
+        "json-language-server",
+        "oxfmt",
+        "oxlint"
+      ],
       "prettier": {
         "allowed": false
       },
@@ -119,7 +159,12 @@
       ]
     },
     "JSDoc": {
-      "language_servers": ["typescript-language-server", "oxfmt", "oxlint"],
+      "language_servers": [
+        "tsgo",
+        "!typescript-language-server",
+        "oxfmt",
+        "oxlint"
+      ],
       "format_on_save": "on",
       "prettier": {
         "allowed": false
@@ -134,7 +179,12 @@
     },
     "TSX": {
       "format_on_save": "on",
-      "language_servers": ["typescript-language-server", "oxfmt", "oxlint"],
+      "language_servers": [
+        "tsgo",
+        "!typescript-language-server",
+        "oxfmt",
+        "oxlint"
+      ],
       "prettier": {
         "allowed": false
       },
@@ -148,7 +198,12 @@
     },
     "JavaScript": {
       "format_on_save": "on",
-      "language_servers": ["typescript-language-server", "oxfmt", "oxlint"],
+      "language_servers": [
+        "tsgo",
+        "!typescript-language-server",
+        "oxfmt",
+        "oxlint"
+      ],
       "prettier": {
         "allowed": false
       },
@@ -162,7 +217,12 @@
     },
     "TypeScript": {
       "format_on_save": "on",
-      "language_servers": ["typescript-language-server", "oxfmt", "oxlint"],
+      "language_servers": [
+        "tsgo",
+        "!typescript-language-server",
+        "oxfmt",
+        "oxlint"
+      ],
       "prettier": {
         "allowed": false
       },
