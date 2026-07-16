@@ -1,4 +1,5 @@
 import { ulid } from '@std/ulid'
+import { zipSync } from 'fflate'
 import { showRoutes } from 'hono/dev'
 import { timeout } from 'hono/timeout'
 import { prettyJSON } from 'hono/pretty-json'
@@ -6,9 +7,13 @@ import { Hono, type MiddlewareHandler } from 'hono'
 
 import { cli } from '#cli.ts'
 import { Docs } from '#docs.tsx'
-import { createPaste, getPasteContent, getPasteMetadata } from '#storage.ts'
+import { createPaste, createPastes, getPasteContent, getPasteMetadata } from '#storage.ts'
 
 import OpenAPISchema from '#openapi.json' with { type: 'json' }
+
+const MAX_MULTIPART_ENTRIES = 10
+const MAX_UPLOAD_SIZE = 25 * 1024 * 1024
+const MAX_ARCHIVE_NAME_SIZE = 240
 
 let _bindings: Cloudflare.Env
 
@@ -40,6 +45,43 @@ const rateLimit: MiddlewareHandler<{ Bindings: Cloudflare.Env }> = async (contex
   await next()
 }
 
+const uploadSizeLimit: MiddlewareHandler = async (context, next) => {
+  const contentLength = Number(context.req.header('content-length'))
+  if (Number.isFinite(contentLength) && contentLength > MAX_UPLOAD_SIZE)
+    return context.json({ ok: false, error: 'Payload exceeds 25 MiB limit' }, 413)
+
+  const body = context.req.raw.body
+  if (!body) return await next()
+
+  const chunks: Array<Uint8Array> = []
+  const reader = body.getReader()
+  let size = 0
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    size += value.byteLength
+    if (size > MAX_UPLOAD_SIZE) {
+      await reader.cancel()
+      return context.json({ ok: false, error: 'Payload exceeds 25 MiB limit' }, 413)
+    }
+    chunks.push(value)
+  }
+
+  const requestInit = {
+    body: new ReadableStream({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(chunk)
+        controller.close()
+      }
+    }),
+    duplex: 'half'
+  }
+  context.req.raw = new Request(context.req.raw, requestInit)
+  await next()
+}
+
 app.get('/health', context => context.text('ok'))
 app.get('/key/generate', context => context.json({ ok: true, key: `pstbn_${ulid()}` }))
 app
@@ -50,24 +92,142 @@ app
   .get('/docs', context => context.html(Docs({ baseUrl: new URL(context.req.url).origin })))
   .get('/', context => context.redirect('/docs'))
 
-app.post('/', rateLimit, async context => {
-  const language = context.req.query('lang') ?? null
+type MultipartEntry = {
+  content: Uint8Array<ArrayBuffer>
+  contentType: string | undefined
+  filename: string
+}
 
-  let body: ArrayBuffer
-  let contentType: string | undefined
+type FormEntry = [name: string, value: File | string]
 
-  if ((context.req.header('content-type') ?? '').includes('multipart/form-data')) {
-    const form = await context.req.parseBody()
-    const file = form['file']
+function safeArchiveName(value: string, fallback: string): string {
+  const basename = value.replaceAll('\\', '/').split('/').pop()
+  const safe = Array.from(basename ?? '')
+    .filter(character => {
+      const code = character.charCodeAt(0)
+      return code > 0x1f && code !== 0x7f
+    })
+    .join('')
+    .trim()
+  return !safe ||
+    safe === '.' ||
+    safe === '..' ||
+    safe === '__proto__' ||
+    new TextEncoder().encode(safe).byteLength > MAX_ARCHIVE_NAME_SIZE
+    ? fallback
+    : safe
+}
 
-    if (!(file instanceof File))
-      return context.json({ ok: false, error: "Missing 'file' field in multipart body" }, 400)
-    body = await file.arrayBuffer()
-    contentType = file.type === 'application/octet-stream' ? undefined : file.type || undefined
-  } else {
-    body = await context.req.arrayBuffer()
-    contentType = context.req.header('content-type')?.split(';')[0]
+function uniqueArchiveName(filename: string, usedNames: Set<string>): string {
+  let candidate = filename
+  let suffix = 2
+  const dot = filename.lastIndexOf('.')
+  const stem = dot > 0 ? filename.slice(0, dot) : filename
+  const extension = dot > 0 ? filename.slice(dot) : ''
+
+  while (usedNames.has(candidate.toLowerCase())) {
+    candidate = `${stem}-${suffix}${extension}`
+    suffix += 1
   }
+
+  usedNames.add(candidate.toLowerCase())
+  return candidate
+}
+
+async function toMultipartEntries(formEntries: Array<FormEntry>): Promise<Array<MultipartEntry>> {
+  const usedNames = new Set<string>()
+  const entries = await Promise.all(
+    formEntries.map(async ([name, value], index) => {
+      if (value instanceof File) {
+        return {
+          content: new Uint8Array(await value.arrayBuffer()),
+          contentType:
+            value.type === 'application/octet-stream' ? undefined : value.type || undefined,
+          filename: safeArchiveName(value.name, `file-${index + 1}`)
+        }
+      }
+
+      return {
+        content: new TextEncoder().encode(value),
+        contentType: 'text/plain; charset=utf-8',
+        filename: `${safeArchiveName(name, `field-${index + 1}`)}.txt`
+      }
+    })
+  )
+
+  return entries.map(entry => ({
+    ...entry,
+    filename: uniqueArchiveName(entry.filename, usedNames)
+  }))
+}
+
+app.post('/', rateLimit, uploadSizeLimit, async context => {
+  const language = context.req.query('lang') ?? null
+  const requestContentType = context.req.header('content-type') ?? ''
+  const mediaType = requestContentType.split(';')[0]?.trim().toLowerCase()
+  const isMultipart = mediaType === 'multipart/form-data'
+  const zipOption = context.req.query('zip')
+
+  if (zipOption !== undefined && zipOption !== 'true' && zipOption !== 'false')
+    return context.json({ ok: false, error: "'zip' must be 'true' or 'false'" }, 400)
+
+  if (!isMultipart && zipOption !== undefined)
+    return context.json({ ok: false, error: "'zip' is only supported for multipart uploads" }, 400)
+
+  const url = new URL(context.req.url)
+
+  if (isMultipart) {
+    let form: FormData
+    try {
+      form = await context.req.raw.formData()
+    } catch {
+      return context.json({ ok: false, error: 'Invalid multipart body' }, 400)
+    }
+
+    const formEntries = [...form.entries()] as Array<FormEntry>
+
+    if (formEntries.length === 0)
+      return context.json({ ok: false, error: 'Multipart body has no entries' }, 400)
+
+    if (formEntries.length > MAX_MULTIPART_ENTRIES)
+      return context.json(
+        { ok: false, error: `Too many multipart entries; maximum is ${MAX_MULTIPART_ENTRIES}` },
+        400
+      )
+
+    const entries = await toMultipartEntries(formEntries)
+    const shouldZip = zipOption === 'true' || (zipOption === undefined && entries.length > 1)
+
+    if (shouldZip) {
+      const archive = Object.create(null) as Record<string, Uint8Array>
+      for (const entry of entries) archive[entry.filename] = entry.content
+
+      const zipped = zipSync(archive, { level: 0 })
+      const paste = await createPaste(
+        context.env.PASTE_METADATA,
+        context.env.PASTE_CONTENT,
+        zipped.buffer,
+        null,
+        'application/zip'
+      )
+      return context.text(`${url.origin}/${paste.id}\n`, 201)
+    }
+
+    const pastes = await createPastes(
+      context.env.PASTE_METADATA,
+      context.env.PASTE_CONTENT,
+      entries.map(entry => ({
+        content: entry.content.buffer,
+        language,
+        contentType: entry.contentType
+      }))
+    )
+
+    return context.text(`${pastes.map(paste => `${url.origin}/${paste.id}`).join('\n')}\n`, 201)
+  }
+
+  const body = await context.req.arrayBuffer()
+  const contentType = requestContentType.split(';')[0] || undefined
 
   if (!body.byteLength) return context.json({ ok: false, error: 'Empty body' }, 400)
 
@@ -78,7 +238,6 @@ app.post('/', rateLimit, async context => {
     language,
     contentType
   )
-  const url = new URL(context.req.url)
 
   return context.text(`${url.origin}/${paste.id}\n`, 201)
 })

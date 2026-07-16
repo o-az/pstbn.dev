@@ -42,10 +42,15 @@ run = "bun vite dev --mode='development' --config='vite.config.ts'"
 description = "build TS project"
 run = "bun tsdown --config='tsdown.config.ts'"
 
+[tasks.test]
+description = "test CF Hono App"
+run = "bun vitest --config='vitest.config.ts' --run"
+
 [tasks.typecheck]
 description = "type check JS/TS files"
 run = "bun tsc --project tsconfig.json --noEmit"
 
 [tasks.ci]
 description = "run CI tasks"
+depends = [{ task = "build" }, { task = "test" }]
 run = "hk fix --all"

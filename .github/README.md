@@ -41,7 +41,33 @@ npx --yes pstbn.dev@latest create --file ./video.mp4
 # url: "https://pstbn.dev/01KS3W3A3BC4ZFB2Y0G2D2W11R"
 ```
 
-Returns the paste URL as plain text (status `201`).
+Multipart uploads accept up to 10 entries. A single entry is stored directly, while multiple entries are bundled into one ZIP paste by default:
+
+```sh
+curl "https://pstbn.dev" \
+  --form "video=@video.mp4;type=video/mp4" \
+  --form "image=@image.png;type=image/png"
+
+# https://pstbn.dev/01KS3W4F38YM2DS8KSV8QAGX8R
+```
+
+Use `zip=true` to ZIP a single entry, or `zip=false` to create one paste per entry:
+
+```sh
+curl "https://pstbn.dev?zip=true" \
+  --form "video=@video.mp4;type=video/mp4"
+
+curl "https://pstbn.dev?zip=false" \
+  --form "video=@video.mp4;type=video/mp4" \
+  --form "image=@image.png;type=image/png"
+
+# https://pstbn.dev/01KS3W4YQ7BNGE60BB0MXVMSVR
+# https://pstbn.dev/01KS3W4YQ7BNGE60BB0MXVMSVS
+```
+
+Uploads are limited to 25 MiB, including multipart framing.
+
+Returns the paste URL or URLs as plain text (status `201`).
 
 **GET** `/create`
 

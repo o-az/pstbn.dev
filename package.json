@@ -26,7 +26,7 @@
   "scripts": {
     "dev": "vite dev --mode='development' --config='vite.config.ts'",
     "build": "tsdown --config='tsdown.config.ts'",
-    "test": "echo 'noop'",
+    "test": "vitest --config='vitest.config.ts' --run",
     "preview": "vite preview",
     "format": "oxfmt --config='oxfmt.config.ts' --write",
     "lint": "oxlint --config='oxlint.config.ts' --type-aware --type-check --fix-dangerously",
@@ -44,6 +44,7 @@
     "postpack": "rm README.md"
   },
   "dependencies": {
+    "fflate": "^0.8.3",
     "hono": "^4.12.30",
     "incur": "^0.4.13",
     "zod": "^4.4.3"
@@ -53,6 +54,7 @@
     "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.0",
     "@cloudflare/vite-plugin": "^1.44.0",
+    "@cloudflare/vitest-pool-workers": "^0.18.5",
     "@cloudflare/workers-types": "^5.20260714.1",
     "@scalar/api-reference": "^1.62.5",
     "@scalar/types": "^0.16.2",
@@ -71,6 +73,7 @@
     "vite": "^8.1.4",
     "vite-plugin-devtools-json": "^1.0.0",
     "vite-plugin-inspect": "^12.0.2",
+    "vitest": "^4.1.10",
     "wrangler": "^4.110.0"
   },
   "packageManager": "bun@1.3.14",

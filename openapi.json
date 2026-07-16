@@ -51,8 +51,8 @@
       },
       "post": {
         "operationId": "createPasteRaw",
-        "summary": "Create a paste from raw body",
-        "description": "Creates a new paste using the raw request body as content. Optionally specify a language via the `lang` query parameter.",
+        "summary": "Create pastes from raw or multipart content",
+        "description": "Creates a paste from a raw body or up to 10 multipart entries. One multipart entry is stored directly by default; multiple entries are bundled into a ZIP. Uploads are limited to 25 MiB.",
         "tags": [
           "Pastes"
         ],
@@ -64,11 +64,19 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "zip",
+            "in": "query",
+            "description": "Multipart only. Set true to always return one ZIP paste or false to create one paste per entry. When omitted, multiple entries are zipped and one entry is stored directly.",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "requestBody": {
           "required": true,
-          "description": "The paste content. Use text/plain for text, or application/octet-stream (and image/* types) for binary files.",
+          "description": "Raw paste content or a multipart form containing up to 10 file or text entries. The entire encoded request is limited to 25 MiB.",
           "content": {
             "text/plain": {
               "schema": {
@@ -98,30 +106,33 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "File to upload"
-                  }
-                },
-                "required": [
-                  "file"
-                ]
+                "description": "Up to 10 arbitrarily named file or text entries.",
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  ]
+                }
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Paste created successfully. Returns the paste URL.",
+            "description": "Paste creation succeeded. Returns one URL for direct or ZIP uploads, or one URL per line when zip=false.",
             "content": {
               "text/plain": {
                 "schema": {
                   "type": "string",
-                  "description": "Absolute URL to the created paste, followed by a newline.",
+                  "description": "One or more absolute paste URLs, each followed by a newline.",
                   "examples": [
-                    "https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB\n"
+                    "https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB\n",
+                    "https://pstbn.dev/01KMEND534DJFKS65C2HTC5VBB\nhttps://pstbn.dev/01KMEND534DJFKS65C2HTC5VBC\n"
                   ]
                 }
               }
@@ -146,7 +157,7 @@
             }
           },
           "400": {
-            "description": "Empty body or missing file field",
+            "description": "Empty or invalid body, invalid zip option, or too many multipart entries",
             "content": {
               "application/json": {
                 "schema": {
@@ -159,10 +170,28 @@
                       "error": "Empty body"
                     }
                   },
-                  "missingFile": {
+                  "tooManyEntries": {
                     "value": {
                       "ok": false,
-                      "error": "Missing 'file' field in multipart body"
+                      "error": "Too many multipart entries; maximum is 10"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The encoded request body exceeds 25 MiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "tooLarge": {
+                    "value": {
+                      "ok": false,
+                      "error": "Payload exceeds 25 MiB limit"
                     }
                   }
                 }
