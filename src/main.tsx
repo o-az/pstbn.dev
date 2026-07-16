@@ -63,7 +63,7 @@ app.post('/', rateLimit, async context => {
     if (!(file instanceof File))
       return context.json({ ok: false, error: "Missing 'file' field in multipart body" }, 400)
     body = await file.arrayBuffer()
-    contentType = file.type || undefined
+    contentType = file.type === 'application/octet-stream' ? undefined : file.type || undefined
   } else {
     body = await context.req.arrayBuffer()
     contentType = context.req.header('content-type')?.split(';')[0]
