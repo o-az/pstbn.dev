@@ -2,10 +2,12 @@ import { Cli, z } from 'incur'
 
 import { createPaste, getPasteContent, getPasteMetadata, listPastes } from '#storage.ts'
 
+import packageJSON from '#package.json' with { type: 'json' }
+
 const BASE_URL = process.env.PSTBN_URL ?? 'https://pstbn.dev'
 
 export const cli = Cli.create('pstbn', {
-  version: process.env.APP_VERSION,
+  version: packageJSON.version,
   description: 'Agent-first, simple, robust pastebin',
   vars: z.object({
     r2: z.custom<R2Bucket>().optional(),

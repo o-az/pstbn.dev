@@ -33,7 +33,7 @@
     "!eslint",
     "!typescript-language-server",
 
-    "tsgo",
+    "typescript-ls",
     "tombi",
     "oxfmt",
     "oxlint",
@@ -135,7 +135,7 @@
     },
     "Markdown": {
       "language_servers": [
-        "tsgo",
+        "typescript-ls",
         "oxfmt",
         "oxlint",
         "markdown-oxide",
@@ -197,7 +197,7 @@
     },
     "JSDoc": {
       "language_servers": [
-        "tsgo",
+        "typescript-ls",
         "oxfmt",
         "oxlint",
         "!eslint",
@@ -219,7 +219,7 @@
     "TSX": {
       "format_on_save": "on",
       "language_servers": [
-        "tsgo",
+        "typescript-ls",
         "oxfmt",
         "oxlint",
         "!eslint",
@@ -240,7 +240,7 @@
     "JavaScript": {
       "format_on_save": "on",
       "language_servers": [
-        "tsgo",
+        "typescript-ls",
         "oxfmt",
         "oxlint",
         "!eslint",
@@ -261,7 +261,7 @@
     "TypeScript": {
       "format_on_save": "on",
       "language_servers": [
-        "tsgo",
+        "typescript-ls",
         "oxfmt",
         "oxlint",
         "!eslint",

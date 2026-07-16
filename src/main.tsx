@@ -7,6 +7,7 @@ import { Hono, type MiddlewareHandler } from 'hono'
 
 import { cli } from '#cli.ts'
 import { Docs } from '#docs.tsx'
+import { FORMAT_CONTENT_TYPES, parsePastePath } from '#utilities.ts'
 import { createPaste, createPastes, getPasteContent, getPasteMetadata } from '#storage.ts'
 
 import OpenAPISchema from '#openapi.json' with { type: 'json' }
@@ -20,16 +21,6 @@ let _bindings: Cloudflare.Env
 cli.use(async (context, next) => {
   context.set('kv', _bindings.PASTE_METADATA)
   context.set('r2', _bindings.PASTE_CONTENT)
-  await next()
-})
-
-const app = new Hono<{ Bindings: Cloudflare.Env }>()
-
-app.use('*', timeout(5_000))
-app.use(prettyJSON({ force: true }))
-
-app.use(async (context, next) => {
-  _bindings = context.env
   await next()
 })
 
@@ -82,24 +73,34 @@ const uploadSizeLimit: MiddlewareHandler = async (context, next) => {
   await next()
 }
 
-app.get('/health', context => context.text('ok'))
-app.get('/key/generate', context => context.json({ ok: true, key: `pstbn_${ulid()}` }))
-app
+const app = new Hono<{ Bindings: Cloudflare.Env }>()
+
+  .use('*', timeout(5_000))
+  .use(prettyJSON({ force: true }))
+
+  .use(async (context, next) => {
+    _bindings = context.env
+    await next()
+  })
+  .get('/health', context => context.text('ok'))
+  .get('/status', context =>
+    context.json({
+      ok: true,
+      commitSha: __COMMIT_SHA__ || context.env.COMMIT_SHA
+    })
+  )
+  .get('/', context => context.redirect('/docs'))
   .get('/schema', context => context.json(OpenAPISchema))
   .get('/openapi.json', context => context.json(OpenAPISchema))
-
-app
+  .get('/key/generate', context => context.json({ ok: true, key: `pstbn_${ulid()}` }))
   .get('/docs', context => context.html(Docs({ baseUrl: new URL(context.req.url).origin })))
-  .get('/', context => context.redirect('/docs'))
-
-type MultipartEntry = {
-  content: Uint8Array<ArrayBuffer>
-  contentType: string | undefined
-  filename: string
-}
 
 type FormEntry = [name: string, value: File | string]
 
+/**
+ * Keep archive entries recognizable and safe to extract. Strip path components and control
+ * characters, then use the provided fallback for empty, reserved, or oversized names.
+ */
 function safeArchiveName(value: string, fallback: string): string {
   const basename = value.replaceAll('\\', '/').split('/').pop()
   const safe = Array.from(basename ?? '')
@@ -118,6 +119,7 @@ function safeArchiveName(value: string, fallback: string): string {
     : safe
 }
 
+// Avoid overwriting entries and case-insensitive extraction collisions by adding -2, -3, etc.
 function uniqueArchiveName(filename: string, usedNames: Set<string>): string {
   let candidate = filename
   let suffix = 2
@@ -134,7 +136,13 @@ function uniqueArchiveName(filename: string, usedNames: Set<string>): string {
   return candidate
 }
 
-async function toMultipartEntries(formEntries: Array<FormEntry>): Promise<Array<MultipartEntry>> {
+async function toMultipartEntries(formEntries: Array<FormEntry>): Promise<
+  Array<{
+    filename: string
+    contentType: string | undefined
+    content: Uint8Array<ArrayBuffer>
+  }>
+> {
   const usedNames = new Set<string>()
   const entries = await Promise.all(
     formEntries.map(async ([name, value], index) => {
@@ -164,10 +172,11 @@ async function toMultipartEntries(formEntries: Array<FormEntry>): Promise<Array<
 app.post('/', rateLimit, uploadSizeLimit, async context => {
   const language = context.req.query('lang') ?? null
   const requestContentType = context.req.header('content-type') ?? ''
-  const mediaType = requestContentType.split(';')[0]?.trim().toLowerCase()
-  const isMultipart = mediaType === 'multipart/form-data'
-  const zipOption = context.req.query('zip')
 
+  const mediaType = requestContentType.split(';').at(0)?.trim().toLowerCase()
+  const isMultipart = mediaType === 'multipart/form-data'
+
+  const zipOption = context.req.query('zip')
   if (zipOption !== undefined && zipOption !== 'true' && zipOption !== 'false')
     return context.json({ ok: false, error: "'zip' must be 'true' or 'false'" }, 400)
 
@@ -227,7 +236,7 @@ app.post('/', rateLimit, uploadSizeLimit, async context => {
   }
 
   const body = await context.req.arrayBuffer()
-  const contentType = requestContentType.split(';')[0] || undefined
+  const contentType = requestContentType.split(';').at(0) || undefined
 
   if (!body.byteLength) return context.json({ ok: false, error: 'Empty body' }, 400)
 
@@ -262,37 +271,6 @@ app.get('/create', rateLimit, async context => {
 
   return context.text(`${url.origin}/${paste.id}\n`, 201)
 })
-
-const FORMAT_CONTENT_TYPES = {
-  txt: 'text/plain; charset=utf-8',
-  html: 'text/html; charset=utf-8',
-  md: 'text/markdown; charset=utf-8',
-  json: 'application/json; charset=utf-8',
-  gif: 'image/gif',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  png: 'image/png',
-  webp: 'image/webp',
-  mp4: 'video/mp4',
-  m4v: 'video/x-m4v',
-  webm: 'video/webm',
-  mov: 'video/quicktime',
-  avi: 'video/x-msvideo',
-  mkv: 'video/x-matroska',
-  cast: 'application/x-asciicast'
-} as const
-
-type PasteFormat = keyof typeof FORMAT_CONTENT_TYPES
-
-function parsePastePath(raw: string): { id: string; format: PasteFormat | null } {
-  const match = raw.match(
-    /^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|html|gif|jpg|jpeg|png|webp|mp4|m4v|mov|webm|avi|mkv|cast))?$/
-  )
-  return {
-    id: match?.groups?.id ?? raw,
-    format: (match?.groups?.format as PasteFormat | undefined) ?? null
-  }
-}
 
 app.get('/:id', async context => {
   const accept = context.req.header('accept') ?? ''
