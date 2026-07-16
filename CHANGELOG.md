@@ -1,5 +1,11 @@
 # pstbn.dev
 
+## 0.0.11
+
+### Patch Changes
+
+- [#16](https://github.com/o-az/pstbn.dev/pull/16) [`baebe14`](https://github.com/o-az/pstbn.dev/commit/baebe144ff8d499559468a7e52dc92d86b2a2747) Thanks [@o-az](https://github.com/o-az)! - Fixed CLI file uploads for videos and other binary files. Added multi-entry multipart uploads with optional ZIP bundling.
+
 ## 0.0.10
 
 ### Patch Changes
