@@ -463,6 +463,45 @@
         }
       }
     },
+    "/status": {
+      "get": {
+        "operationId": "getStatus",
+        "summary": "Deployment status",
+        "description": "Returns the commit SHA for the currently deployed Worker.",
+        "tags": [
+          "Meta"
+        ],
+        "responses": {
+          "200": {
+            "description": "Current deployment status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "commitSha"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "commitSha": {
+                      "type": "string",
+                      "description": "Short Git commit SHA for the deployed Worker",
+                      "examples": [
+                        "abc1234"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/docs": {
       "get": {
         "operationId": "getDocs",
