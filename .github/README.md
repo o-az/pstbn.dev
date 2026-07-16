@@ -31,10 +31,10 @@ curl --request POST \
 Using CLI with `npx pstbn.dev`:
 
 ```sh
-npx --yes pstbn.dev@latest --content "hello world"
+npx --yes pstbn.dev@latest create --content "hello world"
 # url: "https://pstbn.dev/01KS3W2NNZ479V5RXMEPGSMS4E"
 
-npx --yes pstbn.dev@latest --content "const x = 1" --language ts
+npx --yes pstbn.dev@latest create --content "const x = 1" --language ts
 # url: "https://pstbn.dev/01KS3W2STR416NY0Z7FFT0F79M"
 
 npx --yes pstbn.dev@latest create --file ./video.mp4
