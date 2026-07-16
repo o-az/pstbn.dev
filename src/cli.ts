@@ -67,7 +67,7 @@ export const cli = Cli.create('pstbn', {
         const paste = await createPaste(
           kv,
           r2,
-          new TextEncoder().encode(content!).buffer,
+          new TextEncoder().encode(content).buffer,
           context.options.language ?? null
         )
         return context.ok(
