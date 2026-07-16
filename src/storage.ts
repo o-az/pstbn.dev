@@ -13,6 +13,42 @@ const PasteMetadataSchema = z.object({
 
 export type PasteMetadata = z.infer<typeof PasteMetadataSchema>
 
+export type PasteInput = {
+  content: ArrayBuffer
+  language: string | null
+  contentType?: string | null
+}
+
+function preparePaste(input: PasteInput): PasteMetadata {
+  const id = ulid()
+  return {
+    id,
+    language: input.language,
+    size: input.content.byteLength,
+    createdAt: new Date().toISOString(),
+    contentType: input.contentType ?? sniffFile(input.content).mimeType
+  }
+}
+
+async function deletePastes(kv: KVNamespace, r2: R2Bucket, ids: Array<string>): Promise<void> {
+  await Promise.allSettled([r2.delete(ids), ...ids.map(id => kv.delete(id))])
+}
+
+async function storePaste(
+  kv: KVNamespace,
+  r2: R2Bucket,
+  input: PasteInput,
+  metadata: PasteMetadata
+): Promise<void> {
+  try {
+    await r2.put(metadata.id, input.content)
+    await kv.put(metadata.id, JSON.stringify(metadata))
+  } catch (error) {
+    await deletePastes(kv, r2, [metadata.id])
+    throw error
+  }
+}
+
 export async function createPaste(
   kv: KVNamespace,
   r2: R2Bucket,
@@ -20,21 +56,34 @@ export async function createPaste(
   language: string | null,
   contentType?: string | null
 ): Promise<PasteMetadata> {
-  const id = ulid()
+  const input = { content, language, contentType }
+  const metadata = preparePaste(input)
 
-  const detectedType = contentType ?? sniffFile(content).mimeType
+  await storePaste(kv, r2, input, metadata)
+  return metadata
+}
 
-  const metadata: PasteMetadata = {
-    id,
-    language,
-    size: content.byteLength,
-    createdAt: new Date().toISOString(),
-    contentType: detectedType
+export async function createPastes(
+  kv: KVNamespace,
+  r2: R2Bucket,
+  inputs: Array<PasteInput>
+): Promise<Array<PasteMetadata>> {
+  const pastes = inputs.map(input => ({ input, metadata: preparePaste(input) }))
+  const results = await Promise.allSettled(
+    pastes.map(({ input, metadata }) => storePaste(kv, r2, input, metadata))
+  )
+  const failure = results.find(result => result.status === 'rejected')
+
+  if (failure) {
+    await deletePastes(
+      kv,
+      r2,
+      pastes.map(paste => paste.metadata.id)
+    )
+    throw failure.reason
   }
 
-  await Promise.all([r2.put(id, content), kv.put(id, JSON.stringify(metadata))])
-
-  return metadata
+  return pastes.map(paste => paste.metadata)
 }
 
 export async function getPasteContent(r2: R2Bucket, id: string): Promise<R2ObjectBody | null> {

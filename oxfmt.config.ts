@@ -2,6 +2,7 @@ import { defineConfig } from 'oxfmt'
 
 export default defineConfig({
   ignorePatterns: [
+    '*.toml',
     '**/_/**',
     '.agents',
     '**/dist/**',

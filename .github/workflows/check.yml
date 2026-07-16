@@ -34,3 +34,9 @@ jobs:
 
       - name: Checks
         uses: ./.github/actions/checks
+
+      - name: 'Build'
+        run: bun run build
+
+      - name: 'Preview Publish'
+        run: bun x pkg-pr-new publish .

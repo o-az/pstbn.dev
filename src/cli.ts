@@ -2,10 +2,12 @@ import { Cli, z } from 'incur'
 
 import { createPaste, getPasteContent, getPasteMetadata, listPastes } from '#storage.ts'
 
+import packageJSON from '#package.json' with { type: 'json' }
+
 const BASE_URL = process.env.PSTBN_URL ?? 'https://pstbn.dev'
 
 export const cli = Cli.create('pstbn', {
-  version: process.env.APP_VERSION,
+  version: packageJSON.version,
   description: 'Agent-first, simple, robust pastebin',
   vars: z.object({
     r2: z.custom<R2Bucket>().optional(),
@@ -19,9 +21,10 @@ export const cli = Cli.create('pstbn', {
         .string()
         .optional()
         .describe('Language for syntax highlighting (e.g. json, sh, rust)'),
-      content: z.string().optional().describe('Paste content (alternative to piping via stdin)')
+      content: z.string().optional().describe('Paste content (alternative to piping via stdin)'),
+      file: z.string().optional().describe('Path to a file to upload')
     }),
-    alias: { language: 'l', content: 'c' },
+    alias: { language: 'l', content: 'c', file: 'f' },
     output: z.object({
       id: z.string().optional(),
       language: z.string().nullable().optional(),
@@ -34,19 +37,35 @@ export const cli = Cli.create('pstbn', {
       {
         options: { content: 'const x = 1', language: 'ts' },
         description: 'Create a paste with language'
-      }
+      },
+      { options: { file: './video.mp4' }, description: 'Upload a file' }
     ],
     run: async context => {
       const content = context.options.content
-      if (!content)
+      const filePath = context.options.file
+      if (content && filePath)
+        return context.error({
+          code: 'CONFLICTING_INPUT',
+          message: 'Provide either --content or --file, not both',
+          retryable: true
+        })
+
+      if (!content && !filePath)
         return context.error({
           code: 'MISSING_CONTENT',
-          message: 'Provide content via --content or pipe via stdin',
+          message: 'Provide content via --content, a path via --file, or pipe via stdin',
           retryable: true
         })
 
       const { kv, r2 } = context.var
       if (kv && r2) {
+        if (filePath)
+          return context.error({
+            code: 'FILE_UNSUPPORTED',
+            message: '--file is only available when running the CLI locally',
+            retryable: false
+          })
+
         const paste = await createPaste(
           kv,
           r2,
@@ -66,10 +85,35 @@ export const cli = Cli.create('pstbn', {
 
       const lang = context.options.language
       const url = new URL(lang ? `?lang=${lang}` : '/', BASE_URL)
+      let body: BodyInit
+      let headers: HeadersInit | undefined
+
+      if (filePath) {
+        try {
+          const [{ readFile }, { basename }] = await Promise.all([
+            import('node:fs/promises'),
+            import('node:path')
+          ])
+          const bytes = await readFile(filePath)
+          const form = new FormData()
+          form.append('file', new Blob([bytes]), basename(filePath))
+          body = form
+        } catch (error) {
+          return context.error({
+            code: 'FILE_READ_FAILED',
+            message: error instanceof Error ? error.message : `Failed to read ${filePath}`,
+            retryable: false
+          })
+        }
+      } else {
+        body = content!
+        headers = { 'Content-Type': 'text/plain' }
+      }
+
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: content
+        headers,
+        body
       })
 
       if (!response.ok) {

@@ -1,12 +1,18 @@
 import * as z from 'zod/mini'
 import { cloudflare } from '@cloudflare/vite-plugin'
+import * as NodeChildProcess from 'node:child_process'
 import VitePluginDevtoolsJson from 'vite-plugin-devtools-json'
 import { defineConfig, loadEnv, type PluginOption } from 'vite'
 import { default as VitePluginInspect } from 'vite-plugin-inspect'
 
+export const COMMIT_SHA = NodeChildProcess.execSync('git rev-parse --short HEAD')
+  .toString()
+  .trim()
+  .slice(0, 7)
+
 const enabledSchema = z.stringbool()
 
-const devFlagsSchema = z.object({
+export const devFlagsSchema = z.object({
   VITE_DEVTOOLS: z.prefault(enabledSchema, 'false'),
   VITE_ENABLE_INSPECT: z.prefault(enabledSchema, 'false'),
   VITE_FORWARD_CONSOLE: z.prefault(enabledSchema, 'false'),
@@ -36,6 +42,9 @@ export default defineConfig(config => {
     server: {
       port: Number(env.PORT ?? 69_69),
       forwardConsole: devFlags.VITE_FORWARD_CONSOLE
+    },
+    define: {
+      __COMMIT_SHA__: JSON.stringify(COMMIT_SHA)
     }
   }
 })

@@ -3,6 +3,8 @@ interface EnvironmentVariables extends Cloudflare.Env {
   readonly NODE_ENV: 'development' | 'production' | 'test'
 }
 
+declare const __COMMIT_SHA__: string
+
 // Node.js `process.env` auto-completion
 declare namespace NodeJS {
   interface ProcessEnv extends EnvironmentVariables {}

@@ -1,5 +1,36 @@
 /** File sniffer utilities for inferring a safe response MIME type from bytes. */
 
+export const FORMAT_CONTENT_TYPES = {
+  txt: 'text/plain; charset=utf-8',
+  html: 'text/html; charset=utf-8',
+  md: 'text/markdown; charset=utf-8',
+  json: 'application/json; charset=utf-8',
+  gif: 'image/gif',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  mp4: 'video/mp4',
+  m4v: 'video/x-m4v',
+  webm: 'video/webm',
+  mov: 'video/quicktime',
+  avi: 'video/x-msvideo',
+  mkv: 'video/x-matroska',
+  cast: 'application/x-asciicast'
+} as const
+
+type PasteFormat = keyof typeof FORMAT_CONTENT_TYPES
+
+export function parsePastePath(raw: string): { id: string; format: PasteFormat | null } {
+  const match = raw.match(
+    /^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|html|gif|jpg|jpeg|png|webp|mp4|m4v|mov|webm|avi|mkv|cast))?$/
+  )
+  return {
+    id: match?.groups?.id ?? raw,
+    format: (match?.groups?.format as PasteFormat | undefined) ?? null
+  }
+}
+
 const SIGNATURES = [
   [[0xff, 0xd8, 0xff], 'image/jpeg'],
   [[0x89, 0x50, 0x4e, 0x47], 'image/png'],
@@ -24,12 +55,10 @@ const ISO_BASE_MEDIA_BRANDS = new Map([
   ['qt  ', 'video/quicktime']
 ])
 
-export type SniffedFile = {
+export function sniffFile(buf: ArrayBuffer): {
   mimeType: string
   kind: 'text' | 'binary'
-}
-
-export function sniffFile(buf: ArrayBuffer): SniffedFile {
+} {
   const bytes = new Uint8Array(buf, 0, Math.min(12, buf.byteLength))
 
   for (const [signature, mimeType] of SIGNATURES) {

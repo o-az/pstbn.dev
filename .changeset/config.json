@@ -7,9 +7,12 @@
   "ignore": [],
   "linked": [],
   "updateInternalDependencies": "patch",
+  "snapshot": {
+    "useCalculatedVersion": true
+  },
   "privatePackages": {
-    "version": true,
-    "tag": false
+    "tag": false,
+    "version": true
   },
   "changelog": [
     "@changesets/changelog-github",
