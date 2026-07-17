@@ -48,7 +48,10 @@ app
   .get('/status', context =>
     context.json({
       ok: true,
-      commitSha: __COMMIT_SHA__ || context.env.COMMIT_SHA
+      commitSha:
+        typeof __COMMIT_SHA__ === 'undefined'
+          ? context.env.COMMIT_SHA
+          : __COMMIT_SHA__
     })
   )
   .get('/', context => context.redirect('/docs'))
