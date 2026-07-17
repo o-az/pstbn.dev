@@ -1,5 +1,11 @@
 # pstbn.dev
 
+## 0.0.12
+
+### Patch Changes
+
+- [#18](https://github.com/o-az/pstbn.dev/pull/18) [`175e21b`](https://github.com/o-az/pstbn.dev/commit/175e21b5a32da5993da30e05bfc9dfab142a9b29) Thanks [@o-az](https://github.com/o-az)! - Fixed API key authentication, rate limits, larger raw uploads, and the deployment status endpoint.
+
 ## 0.0.11
 
 ### Patch Changes
