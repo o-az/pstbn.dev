@@ -1,8 +1,8 @@
 {
   "name": "pstbn.dev",
   "version": "0.0.11",
-  "description": "Agent-first, simple, robust pastebin",
   "homepage": "https://pstbn.dev",
+  "description": "Agent-first, simple, robust pastebin",
   "bin": {
     "pstbn.dev": "./dist/bin.mjs"
   },
@@ -33,7 +33,7 @@
     "check": "bun format && bun lint",
     "deploy": "NODE_ENV='production' wrangler deploy",
     "check:types": "bun tsc --project tsconfig.json --noEmit",
-    "types": "wrangler types --env-interface CloudflareBindings",
+    "types": "wrangler types --env-interface='CloudflareBindings' --env-file='.env.example'",
     "changeset:version": "changeset version && bun format",
     "changeset:publish": "changeset publish",
     "publint": "bun x publint@latest run --pack bun --strict",
@@ -44,20 +44,23 @@
     "postpack": "rm README.md"
   },
   "dependencies": {
+    "@unkey/api": "^2.4.0",
+    "@unkey/hono": "^2.0.0",
+    "@unkey/ratelimit": "^2.1.4",
     "fflate": "^0.8.3",
     "hono": "^4.12.30",
-    "incur": "^0.4.13",
+    "incur": "^0.4.16",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.5",
     "@changesets/changelog-github": "^0.7.0",
-    "@changesets/cli": "^2.31.0",
-    "@cloudflare/vite-plugin": "^1.44.0",
+    "@changesets/cli": "^2.31.1",
+    "@cloudflare/vite-plugin": "^1.45.0",
     "@cloudflare/vitest-pool-workers": "^0.18.5",
-    "@cloudflare/workers-types": "^5.20260714.1",
-    "@scalar/api-reference": "^1.62.5",
-    "@scalar/types": "^0.16.2",
+    "@cloudflare/workers-types": "^5.20260717.1",
+    "@scalar/api-reference": "^1.62.9",
+    "@scalar/types": "^0.16.4",
     "@std/ulid": "npm:@jsr/std__ulid",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "^1.3.14",
@@ -65,16 +68,16 @@
     "@vitejs/devtools": "^0.4.1",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
-    "oxlint-tsgolint": "^0.24.0",
+    "oxlint-tsgolint": "^0.25.0",
     "publint": "^0.3.21",
-    "tsdown": "^0.22.7",
+    "tsdown": "^0.22.9",
     "typed-query-selector": "^2.12.2",
     "typescript": "^7.0.2",
-    "vite": "^8.1.4",
+    "vite": "^8.1.5",
     "vite-plugin-devtools-json": "^1.0.0",
     "vite-plugin-inspect": "^12.0.2",
     "vitest": "^4.1.10",
-    "wrangler": "^4.110.0"
+    "wrangler": "^4.111.0"
   },
   "packageManager": "bun@1.3.14",
   "inlinedDependencies": {

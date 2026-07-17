@@ -3,7 +3,9 @@ import type { ApiReferenceConfigurationWithMultipleSources } from '@scalar/types
 
 import packageJSON from '#package.json' with { type: 'json' }
 
-type ScalarConfig = (baseUrl: string) => Partial<ApiReferenceConfigurationWithMultipleSources>
+type ScalarConfig = (
+  baseUrl: string
+) => Partial<ApiReferenceConfigurationWithMultipleSources>
 
 const getScalarConfig: ScalarConfig = baseUrl => ({
   url: '/schema',

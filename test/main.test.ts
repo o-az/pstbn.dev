@@ -16,14 +16,16 @@ async function upload(form: FormData, query = '') {
 }
 
 async function getPaste(url: string | undefined) {
-  if (url === undefined) throw new Error('Upload response did not include a paste URL')
+  if (url === undefined)
+    throw new Error('Upload response did not include a paste URL')
 
   const id = new URL(url).pathname.slice(1)
   const [object, rawMetadata] = await Promise.all([
     env.PASTE_CONTENT.get(id),
     env.PASTE_METADATA.get(id)
   ])
-  if (object === null || rawMetadata === null) throw new Error(`Paste ${id} was not stored`)
+  if (object === null || rawMetadata === null)
+    throw new Error(`Paste ${id} was not stored`)
 
   return {
     content: await object.arrayBuffer(),
@@ -39,7 +41,10 @@ function decode(content: ArrayBuffer | Uint8Array | undefined): string {
 describe('multipart uploads', () => {
   test('stores one entry directly by default', async () => {
     const form = new FormData()
-    form.append('video', new File(['video'], 'video.mp4', { type: 'video/mp4' }))
+    form.append(
+      'video',
+      new File(['video'], 'video.mp4', { type: 'video/mp4' })
+    )
 
     const { response, urls } = await upload(form)
     const paste = await getPaste(urls[0])
@@ -96,12 +101,15 @@ describe('multipart uploads', () => {
     const paste = await getPaste(urls[0])
 
     expect(response.status).toBe(201)
-    expect(Object.keys(unzipSync(new Uint8Array(paste.content)))).toEqual(['note.txt'])
+    expect(Object.keys(unzipSync(new Uint8Array(paste.content)))).toEqual([
+      'note.txt'
+    ])
   })
 
   test('rejects more than ten entries', async () => {
     const form = new FormData()
-    for (let index = 0; index < 11; index += 1) form.append(`field-${index}`, 'value')
+    for (let index = 0; index < 11; index += 1)
+      form.append(`field-${index}`, 'value')
 
     const { response, responseBody } = await upload(form)
 
@@ -156,7 +164,8 @@ describe('multipart uploads', () => {
         contents.add(key)
       },
       async delete(keys: string | Array<string>) {
-        for (const key of typeof keys === 'string' ? [keys] : keys) contents.delete(key)
+        for (const key of typeof keys === 'string' ? [keys] : keys)
+          contents.delete(key)
       }
     } as unknown as R2Bucket
 

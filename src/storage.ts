@@ -2,6 +2,7 @@ import * as z from 'zod/mini'
 import { ulid } from '@std/ulid'
 
 import { sniffFile } from '#utilities.ts'
+import { MAX_ARCHIVE_NAME_SIZE } from '#main.tsx'
 
 const PasteMetadataSchema = z.object({
   id: z.string(),
@@ -30,7 +31,11 @@ function preparePaste(input: PasteInput): PasteMetadata {
   }
 }
 
-async function deletePastes(kv: KVNamespace, r2: R2Bucket, ids: Array<string>): Promise<void> {
+async function deletePastes(
+  kv: KVNamespace,
+  r2: R2Bucket,
+  ids: Array<string>
+): Promise<void> {
   await Promise.allSettled([r2.delete(ids), ...ids.map(id => kv.delete(id))])
 }
 
@@ -86,18 +91,28 @@ export async function createPastes(
   return pastes.map(paste => paste.metadata)
 }
 
-export async function getPasteContent(r2: R2Bucket, id: string): Promise<R2ObjectBody | null> {
+export async function getPasteContent(
+  r2: R2Bucket,
+  id: string
+): Promise<R2ObjectBody | null> {
   return await r2.get(id)
 }
 
-export async function getPasteMetadata(kv: KVNamespace, id: string): Promise<PasteMetadata | null> {
+export async function getPasteMetadata(
+  kv: KVNamespace,
+  id: string
+): Promise<PasteMetadata | null> {
   const raw = await kv.get(id)
   if (!raw) return null
-  const { data, success, error } = PasteMetadataSchema.safeParse(JSON.parse(raw))
+  const { data, success, error } = PasteMetadataSchema.safeParse(
+    JSON.parse(raw)
+  )
 
   if (success) return data
 
-  console.error(`Failed to parse metadata for paste ${id} - ${z.prettifyError(error)}`)
+  console.error(
+    `Failed to parse metadata for paste ${id} - ${z.prettifyError(error)}`
+  )
   return null
 }
 
@@ -121,4 +136,83 @@ export async function listPastes(
     pastes: pastes.filter((paste): paste is PasteMetadata => paste !== null),
     cursor: result.list_complete ? null : result.cursor
   }
+}
+
+export type FormEntry = [name: string, value: File | string]
+
+/**
+ * Keep archive entries recognizable and safe to extract. Strip path components
+ * and control characters, then use the provided fallback for empty, reserved,
+ * or oversized names.
+ */
+function safeArchiveName(value: string, fallback: string): string {
+  const basename = value.replaceAll('\\', '/').split('/').pop()
+  const safe = Array.from(basename ?? '')
+    .filter(character => {
+      const code = character.charCodeAt(0)
+      return code > 0x1f && code !== 0x7f
+    })
+    .join('')
+    .trim()
+  return !safe ||
+    safe === '.' ||
+    safe === '..' ||
+    safe === '__proto__' ||
+    new TextEncoder().encode(safe).byteLength > MAX_ARCHIVE_NAME_SIZE
+    ? fallback
+    : safe
+}
+
+// Avoid overwriting entries and case-insensitive extraction collisions by adding -2, -3, etc.
+function uniqueArchiveName(filename: string, usedNames: Set<string>): string {
+  let candidate = filename
+  let suffix = 2
+  const dot = filename.lastIndexOf('.')
+  const stem = dot > 0 ? filename.slice(0, dot) : filename
+  const extension = dot > 0 ? filename.slice(dot) : ''
+
+  while (usedNames.has(candidate.toLowerCase())) {
+    candidate = `${stem}-${suffix}${extension}`
+    suffix += 1
+  }
+
+  usedNames.add(candidate.toLowerCase())
+  return candidate
+}
+
+export async function toMultipartEntries(
+  formEntries: Array<FormEntry>
+): Promise<
+  Array<{
+    filename: string
+    contentType: string | undefined
+    content: Uint8Array<ArrayBuffer>
+  }>
+> {
+  const usedNames = new Set<string>()
+  const entries = await Promise.all(
+    formEntries.map(async ([name, value], index) => {
+      if (value instanceof File) {
+        return {
+          content: new Uint8Array(await value.arrayBuffer()),
+          contentType:
+            value.type === 'application/octet-stream'
+              ? undefined
+              : value.type || undefined,
+          filename: safeArchiveName(value.name, `file-${index + 1}`)
+        }
+      }
+
+      return {
+        content: new TextEncoder().encode(value),
+        contentType: 'text/plain; charset=utf-8',
+        filename: `${safeArchiveName(name, `field-${index + 1}`)}.txt`
+      }
+    })
+  )
+
+  return entries.map(entry => ({
+    ...entry,
+    filename: uniqueArchiveName(entry.filename, usedNames)
+  }))
 }

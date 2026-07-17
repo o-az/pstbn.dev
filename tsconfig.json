@@ -50,7 +50,8 @@
     "worker-configuration.d.ts"
   ],
   "include": [
-    "./src/**/*"
+    "./src/**/*",
+    "env.d.ts"
   ],
   "exclude": [
     "_",

@@ -1,6 +1,11 @@
 import { Cli, z } from 'incur'
 
-import { createPaste, getPasteContent, getPasteMetadata, listPastes } from '#storage.ts'
+import {
+  createPaste,
+  getPasteContent,
+  getPasteMetadata,
+  listPastes
+} from '#storage.ts'
 
 import packageJSON from '#package.json' with { type: 'json' }
 
@@ -21,7 +26,10 @@ export const cli = Cli.create('pstbn', {
         .string()
         .optional()
         .describe('Language for syntax highlighting (e.g. json, sh, rust)'),
-      content: z.string().optional().describe('Paste content (alternative to piping via stdin)'),
+      content: z
+        .string()
+        .optional()
+        .describe('Paste content (alternative to piping via stdin)'),
       file: z.string().optional().describe('Path to a file to upload')
     }),
     alias: { language: 'l', content: 'c', file: 'f' },
@@ -33,7 +41,10 @@ export const cli = Cli.create('pstbn', {
       url: z.string()
     }),
     examples: [
-      { options: { content: 'hello world' }, description: 'Create a simple paste' },
+      {
+        options: { content: 'hello world' },
+        description: 'Create a simple paste'
+      },
       {
         options: { content: 'const x = 1', language: 'ts' },
         description: 'Create a paste with language'
@@ -53,7 +64,8 @@ export const cli = Cli.create('pstbn', {
       if (!content && !filePath)
         return context.error({
           code: 'MISSING_CONTENT',
-          message: 'Provide content via --content, a path via --file, or pipe via stdin',
+          message:
+            'Provide content via --content, a path via --file, or pipe via stdin',
           retryable: true
         })
 
@@ -77,7 +89,9 @@ export const cli = Cli.create('pstbn', {
           {
             cta: {
               description: 'Next steps:',
-              commands: [{ command: `get ${paste.id}`, description: 'View the paste' }]
+              commands: [
+                { command: `get ${paste.id}`, description: 'View the paste' }
+              ]
             }
           }
         )
@@ -101,7 +115,10 @@ export const cli = Cli.create('pstbn', {
         } catch (error) {
           return context.error({
             code: 'FILE_READ_FAILED',
-            message: error instanceof Error ? error.message : `Failed to read ${filePath}`,
+            message:
+              error instanceof Error
+                ? error.message
+                : `Failed to read ${filePath}`,
             retryable: false
           })
         }
@@ -118,7 +135,10 @@ export const cli = Cli.create('pstbn', {
 
       if (!response.ok) {
         const body = await response.text()
-        return context.error({ code: 'CREATE_FAILED', message: body || 'Failed to create paste' })
+        return context.error({
+          code: 'CREATE_FAILED',
+          message: body || 'Failed to create paste'
+        })
       }
 
       const pasteUrl = (await response.text()).trim()
@@ -140,11 +160,18 @@ export const cli = Cli.create('pstbn', {
       id: z.string().describe('Paste ID')
     }),
     options: z.object({
-      meta: z.coerce.boolean().optional().describe('Return metadata instead of content')
+      meta: z.coerce
+        .boolean()
+        .optional()
+        .describe('Return metadata instead of content')
     }),
     examples: [
       { args: { id: '01ABC123' }, description: 'Get paste content' },
-      { args: { id: '01ABC123' }, options: { meta: true }, description: 'Get paste metadata' }
+      {
+        args: { id: '01ABC123' },
+        options: { meta: true },
+        description: 'Get paste metadata'
+      }
     ],
     run: async context => {
       const { kv, r2 } = context.var
@@ -161,7 +188,9 @@ export const cli = Cli.create('pstbn', {
 
           return metadata
         }
-        const response = await fetch(new URL(`/${context.args.id}?meta=true`, BASE_URL))
+        const response = await fetch(
+          new URL(`/${context.args.id}?meta=true`, BASE_URL)
+        )
         if (!response.ok)
           return context.error({
             code: 'NOT_FOUND',
@@ -201,7 +230,10 @@ export const cli = Cli.create('pstbn', {
     description: 'List recent pastes',
     options: z.object({
       limit: z.coerce.number().default(20).describe('Max results to return'),
-      cursor: z.string().optional().describe('Pagination cursor from previous response')
+      cursor: z
+        .string()
+        .optional()
+        .describe('Pagination cursor from previous response')
     }),
     alias: { limit: 'n' },
     output: z.object({
@@ -223,7 +255,9 @@ export const cli = Cli.create('pstbn', {
           cursor: context.options.cursor
         })
 
-      const params = new URLSearchParams({ limit: String(context.options.limit) })
+      const params = new URLSearchParams({
+        limit: String(context.options.limit)
+      })
       if (context.options.cursor) params.set('cursor', context.options.cursor)
 
       const url = new URL(`/list`, BASE_URL)
@@ -239,7 +273,10 @@ export const cli = Cli.create('pstbn', {
       })
       const ListResponse = z.object({
         ok: z.boolean(),
-        data: z.object({ pastes: z.array(Paste), cursor: z.nullable(z.string()) })
+        data: z.object({
+          pastes: z.array(Paste),
+          cursor: z.nullable(z.string())
+        })
       })
       const { data } = ListResponse.parse(json)
       return { pastes: data.pastes, cursor: data.cursor }

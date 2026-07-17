@@ -27,10 +27,12 @@ const { values } = NodeUtil.parseArgs({
 })
 
 async function build() {
-  const { stderr, stdout, exitCode } = await Bun.$ /* sh */ `bun run build`.env({
-    ...Bun.env,
-    NODE_ENV: 'production'
-  })
+  const { stderr, stdout, exitCode } = await Bun.$ /* sh */ `bun run build`.env(
+    {
+      ...Bun.env,
+      NODE_ENV: 'production'
+    }
+  )
 
   if (exitCode !== 0) {
     console.error(`Non-zero exit code: ${exitCode}`, stderr.toString())
@@ -42,7 +44,8 @@ async function build() {
 }
 
 async function pack() {
-  const { stderr, stdout, exitCode } = await Bun.$ /* sh */ `bun pm pack --ignore-scripts`.env({
+  const { stderr, stdout, exitCode } = await Bun.$
+  /* sh */ `bun pm pack --ignore-scripts`.env({
     ...Bun.env,
     NODE_ENV: 'production'
   })
@@ -84,7 +87,11 @@ async function publish(registry: string) {
 
   if (exitCode !== 0) {
     const stderrStr = stderr.toString()
-    if (stderrStr.includes('You cannot publish over the previously published versions')) {
+    if (
+      stderrStr.includes(
+        'You cannot publish over the previously published versions'
+      )
+    ) {
       console.info(`Version ${pkgJson.version} already published, skipping`)
       return
     }
@@ -99,7 +106,9 @@ async function publish(registry: string) {
 
 async function preChecks() {
   const npmVersion = (
-    await Bun.$ /* sh */ `npm --version`.env({ ...Bun.env, NODE_ENV: 'production' }).text()
+    await Bun.$ /* sh */ `npm --version`
+      .env({ ...Bun.env, NODE_ENV: 'production' })
+      .text()
   ).trim()
 
   const order = Bun.semver.order(npmVersion, '11.5.1')

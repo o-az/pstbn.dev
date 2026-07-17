@@ -5,7 +5,9 @@ import VitePluginDevtoolsJson from 'vite-plugin-devtools-json'
 import { defineConfig, loadEnv, type PluginOption } from 'vite'
 import { default as VitePluginInspect } from 'vite-plugin-inspect'
 
-export const COMMIT_SHA = NodeChildProcess.execSync('git rev-parse --short HEAD')
+export const COMMIT_SHA = NodeChildProcess.execSync(
+  'git rev-parse --short HEAD'
+)
   .toString()
   .trim()
   .slice(0, 7)
@@ -17,7 +19,12 @@ export const devFlagsSchema = z.object({
   VITE_ENABLE_INSPECT: z.prefault(enabledSchema, 'false'),
   VITE_FORWARD_CONSOLE: z.prefault(enabledSchema, 'false'),
   VITE_LOG_LEVEL: z.prefault(
-    z.union([z.literal('error'), z.literal('info'), z.literal('silent'), z.literal('warn')]),
+    z.union([
+      z.literal('error'),
+      z.literal('info'),
+      z.literal('silent'),
+      z.literal('warn')
+    ]),
     'info'
   )
 })
