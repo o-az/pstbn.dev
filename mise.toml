@@ -33,6 +33,7 @@ betterleaks = "latest"
 cloudflared = "latest"
 "npm:oxfmt" = "latest"
 "npm:oxlint" = "latest"
+"github:unkeyed/unkey" = { version = "latest", version_prefix = "cli/v" }
 
 [hooks]
 postinstall = "hk install --mise"

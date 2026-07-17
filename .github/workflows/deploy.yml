@@ -49,5 +49,6 @@ jobs:
           bun x wrangler@latest deploy \
             --config='wrangler.json' \
             --keep-vars \
-            --var 'NODE_ENV:production' \
-            --var "COMMIT_SHA:${COMMIT_SHA}"
+            --var "NODE_ENV:production" \
+            --var "COMMIT_SHA:${COMMIT_SHA}" \
+            --var "PSTBN_URL:https://pstbn.dev"

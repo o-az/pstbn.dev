@@ -21,7 +21,10 @@ export const FORMAT_CONTENT_TYPES = {
 
 type PasteFormat = keyof typeof FORMAT_CONTENT_TYPES
 
-export function parsePastePath(raw: string): { id: string; format: PasteFormat | null } {
+export function parsePastePath(raw: string): {
+  id: string
+  format: PasteFormat | null
+} {
   const match = raw.match(
     /^(?<id>[0-9A-HJKMNP-TV-Z]{26})(?:\.(?<format>json|txt|md|html|gif|jpg|jpeg|png|webp|mp4|m4v|mov|webm|avi|mkv|cast))?$/
   )
@@ -106,8 +109,15 @@ function sniffContainer(buf: ArrayBuffer): string | null {
     if (text.slice(8, 12) === 'AVI ') return 'video/x-msvideo'
   }
 
-  if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) {
-    const header = new TextDecoder().decode(new Uint8Array(buf, 0, Math.min(4_096, buf.byteLength)))
+  if (
+    bytes[0] === 0x1a &&
+    bytes[1] === 0x45 &&
+    bytes[2] === 0xdf &&
+    bytes[3] === 0xa3
+  ) {
+    const header = new TextDecoder().decode(
+      new Uint8Array(buf, 0, Math.min(4_096, buf.byteLength))
+    )
     if (header.includes('webm')) return 'video/webm'
     if (header.includes('matroska')) return 'video/x-matroska'
   }
@@ -124,7 +134,8 @@ function looksLikeText(buf: ArrayBuffer): boolean {
   for (const byte of bytes) {
     if (byte === 0) return false
 
-    const isControl = byte < 0x20 && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d
+    const isControl =
+      byte < 0x20 && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d
     if (isControl) suspicious += 1
   }
 
