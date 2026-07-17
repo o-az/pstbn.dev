@@ -96,6 +96,18 @@ function decode(content: ArrayBuffer | Uint8Array | undefined): string {
   return new TextDecoder().decode(content)
 }
 
+describe('metadata routes', () => {
+  test('does not require Vite build globals for the status route', async () => {
+    const response = await exports.default.fetch('http://localhost/status')
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      ok: true,
+      commitSha: 'abc1234'
+    })
+  })
+})
+
 describe('API key authentication', () => {
   test('allows public uploads and limits them by connecting IP', async () => {
     const response = await exports.default.fetch('http://localhost/', {
