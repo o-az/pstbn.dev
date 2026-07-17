@@ -65,7 +65,17 @@ curl "https://pstbn.dev?zip=false" \
 # https://pstbn.dev/01KS3W4YQ7BNGE60BB0MXVMSVS
 ```
 
-Uploads are limited to 25 MiB, including multipart framing.
+Public and multipart uploads are limited to 25 MiB, including multipart framing. A valid API key raises the limit for raw, non-multipart uploads to 100 MB and uses the rate limit attached to that key:
+
+```sh
+curl --request POST \
+  --url "https://pstbn.dev" \
+  --header "Authorization: Bearer $PSTBN_API_KEY" \
+  --header "Content-Type: video/mp4" \
+  --data-binary "@video.mp4"
+```
+
+Without an API key, uploads use the public IP-based rate limit. If an `Authorization` header is supplied, it must contain a valid Bearer API key.
 
 Returns the paste URL or URLs as plain text (status `201`).
 

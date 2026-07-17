@@ -1,9 +1,8 @@
-import { ulid } from '@std/ulid'
+import { Hono } from 'hono'
 import { zipSync } from 'fflate'
 import { showRoutes } from 'hono/dev'
 import { timeout } from 'hono/timeout'
 import { prettyJSON } from 'hono/pretty-json'
-import { Hono } from 'hono'
 
 import {
   createPaste,
@@ -11,7 +10,8 @@ import {
   type FormEntry,
   getPasteContent,
   getPasteMetadata,
-  toMultipartEntries
+  toMultipartEntries,
+  createStreamedPaste
 } from '#storage.ts'
 import { cli } from '#cli.ts'
 import { Docs } from '#docs.tsx'
@@ -23,10 +23,9 @@ import { FORMAT_CONTENT_TYPES, parsePastePath } from '#utilities.ts'
 import OpenAPISchema from '#openapi.json' with { type: 'json' }
 
 export const MAX_MULTIPART_ENTRIES = 10
-export const MAX_UPLOAD_SIZE = 25 * 1024 * 1024
-export const MAX_ARCHIVE_NAME_SIZE = 240
 
 let _bindings: Cloudflare.Env
+const requestTimeout = timeout(5_000)
 
 cli.use(async (context, next) => {
   context.set('kv', _bindings.PASTE_METADATA)
@@ -35,9 +34,10 @@ cli.use(async (context, next) => {
 })
 
 const app = new Hono<{ Bindings: Cloudflare.Env }>()
-  .use('*', timeout(5_000))
+  .use('*', (context, next) =>
+    context.req.method === 'POST' ? next() : requestTimeout(context, next)
+  )
   .use(prettyJSON({ force: true }))
-
   .use(async (context, next) => {
     _bindings = context.env
     await next()
@@ -54,18 +54,15 @@ app
   .get('/', context => context.redirect('/docs'))
   .get('/schema', context => context.json(OpenAPISchema))
   .get('/openapi.json', context => context.json(OpenAPISchema))
-  .get('/key/generate', context =>
-    context.json({ ok: true, key: `pstbn_${ulid()}` })
-  )
   .get('/docs', context =>
     context.html(Docs({ baseUrl: new URL(context.req.url).origin }))
   )
 
 app.post(
   '/',
-  uploadSizeLimit,
-  rateLimitMiddleware,
   authMiddleware(),
+  rateLimitMiddleware,
+  uploadSizeLimit,
   async context => {
     const language = context.req.query('lang') ?? null
     const requestContentType = context.req.header('content-type') ?? ''
@@ -126,25 +123,25 @@ app.post(
         for (const entry of entries) archive[entry.filename] = entry.content
 
         const zipped = zipSync(archive, { level: 0 })
-        const paste = await createPaste(
-          context.env.PASTE_METADATA,
-          context.env.PASTE_CONTENT,
-          zipped.buffer,
-          null,
-          'application/zip'
-        )
+        const paste = await createPaste({
+          content: zipped.buffer,
+          language: null,
+          contentType: 'application/zip',
+          r2: context.env.PASTE_CONTENT,
+          kv: context.env.PASTE_METADATA
+        })
         return context.text(`${url.origin}/${paste.id}\n`, 201)
       }
 
-      const pastes = await createPastes(
-        context.env.PASTE_METADATA,
-        context.env.PASTE_CONTENT,
-        entries.map(entry => ({
-          content: entry.content.buffer,
+      const pastes = await createPastes({
+        r2: context.env.PASTE_CONTENT,
+        kv: context.env.PASTE_METADATA,
+        inputs: entries.map(entry => ({
           language,
+          content: entry.content.buffer,
           contentType: entry.contentType
         }))
-      )
+      })
 
       return context.text(
         `${pastes.map(paste => `${url.origin}/${paste.id}`).join('\n')}\n`,
@@ -152,25 +149,41 @@ app.post(
       )
     }
 
-    const body = await context.req.arrayBuffer()
     const contentType = requestContentType.split(';').at(0) || undefined
 
+    if (context.get('auth') !== undefined) {
+      const body = context.req.raw.body
+      if (!body) return context.json({ ok: false, error: 'Empty body' }, 400)
+
+      const paste = await createStreamedPaste({
+        r2: context.env.PASTE_CONTENT,
+        kv: context.env.PASTE_METADATA,
+        content: body,
+        language,
+        contentType
+      })
+      if (!paste) return context.json({ ok: false, error: 'Empty body' }, 400)
+
+      return context.text(`${url.origin}/${paste.id}\n`, 201)
+    }
+
+    const body = await context.req.arrayBuffer()
     if (!body.byteLength)
       return context.json({ ok: false, error: 'Empty body' }, 400)
 
-    const paste = await createPaste(
-      context.env.PASTE_METADATA,
-      context.env.PASTE_CONTENT,
-      body,
+    const paste = await createPaste({
+      r2: context.env.PASTE_CONTENT,
+      kv: context.env.PASTE_METADATA,
       language,
-      contentType
-    )
+      contentType,
+      content: body
+    })
 
     return context.text(`${url.origin}/${paste.id}\n`, 201)
   }
 )
 
-app.get('/create', rateLimitMiddleware, authMiddleware(), async context => {
+app.get('/create', authMiddleware(), rateLimitMiddleware, async context => {
   const raw = context.req.query('content')
   if (!raw)
     return context.json(
@@ -184,23 +197,29 @@ app.get('/create', rateLimitMiddleware, authMiddleware(), async context => {
       ? Uint8Array.from(atob(raw), c => c.charCodeAt(0)).buffer
       : new TextEncoder().encode(raw).buffer
   const language = context.req.query('lang') ?? null
-  const paste = await createPaste(
-    context.env.PASTE_METADATA,
-    context.env.PASTE_CONTENT,
+  const paste = await createPaste({
     content,
-    language
-  )
+    language,
+    r2: context.env.PASTE_CONTENT,
+    kv: context.env.PASTE_METADATA
+  })
   const url = new URL(context.req.url)
 
   return context.text(`${url.origin}/${paste.id}\n`, 201)
 })
 
-app.get('/:id', rateLimitMiddleware, authMiddleware(), async context => {
+app.get('/:id', async context => {
   const accept = context.req.header('accept') ?? ''
   const { id, format } = parsePastePath(context.req.param('id'))
   const [object, metadata] = await Promise.all([
-    getPasteContent(context.env.PASTE_CONTENT, id),
-    getPasteMetadata(context.env.PASTE_METADATA, id)
+    getPasteContent({
+      id,
+      r2: context.env.PASTE_CONTENT
+    }),
+    getPasteMetadata({
+      id,
+      kv: context.env.PASTE_METADATA
+    })
   ])
 
   if (object !== null) {
@@ -225,7 +244,13 @@ app.get('/:id', rateLimitMiddleware, authMiddleware(), async context => {
 })
 
 app.get('/*', context => cli.fetch(context.req.raw))
-app.post('/*', rateLimitMiddleware, context => cli.fetch(context.req.raw))
+app.post(
+  '/*',
+  authMiddleware(),
+  rateLimitMiddleware,
+  uploadSizeLimit,
+  context => cli.fetch(context.req.raw)
+)
 
 if (process.env.NODE_ENV === 'development') showRoutes(app, { colorize: true })
 

@@ -1,25 +1,25 @@
 import { Unkey } from '@unkey/api'
+import type { MiddlewareHandler } from 'hono'
 import { createMiddleware } from 'hono/factory'
-import { Context, type MiddlewareHandler } from 'hono'
 import type { V2KeysVerifyKeyResponseData } from '@unkey/api/models/components'
 
 declare module 'hono' {
   interface ContextVariableMap {
-    auth: V2KeysVerifyKeyResponseData
+    auth: V2KeysVerifyKeyResponseData | undefined
   }
 }
 
-type AuthMiddleware = (options?: {
-  permissions?: string
-  getKey?: (conext: Context) => string | null
-}) => MiddlewareHandler<{
-  Bindings: Cloudflare.Env
-}>
-
-export const authMiddleware: AuthMiddleware = (options = {}) => {
+export const authMiddleware = (
+  options: { permissions?: string } = {}
+): MiddlewareHandler<{ Bindings: Cloudflare.Env }> => {
   return createMiddleware(async (context, next) => {
-    const apiKey = context.req.header('Authorization')?.replace('Bearer ', '')
-    if (!apiKey) return context.json({ error: 'Missing API key' }, 401)
+    const authorization = context.req.header('Authorization')
+    if (authorization === undefined) return await next()
+
+    const match = authorization.match(/^Bearer ([^\s]+)$/i)
+    if (!match)
+      return context.json({ error: 'Invalid Authorization header' }, 401)
+    const apiKey = authorization.slice(authorization.indexOf(' ') + 1)
 
     try {
       const unkey = new Unkey({ rootKey: context.env.UNKEY_ROOT_KEY })
@@ -35,17 +35,21 @@ export const authMiddleware: AuthMiddleware = (options = {}) => {
         context.header('X-RateLimit-Remaining', rateLimit.remaining.toString())
       }
 
-      if (data.credits)
+      if (data.credits !== undefined)
         context.header('X-Credit-Remaining', data.credits.toString())
 
-      if (!data.valid)
-        return context.json(
-          { error: data.code },
-          data.code === 'RATE_LIMITED' ? 429 : 401
+      if (!data.valid) {
+        if (
+          data.code === 'FORBIDDEN' ||
+          data.code === 'INSUFFICIENT_PERMISSIONS'
         )
+          return context.json({ error: data.code }, 403)
 
-      if (data.code === 'INSUFFICIENT_PERMISSIONS')
-        return context.json({ error: 'Forbidden' }, 403)
+        if (data.code === 'RATE_LIMITED')
+          return context.json({ error: data.code }, 429)
+
+        return context.json({ error: data.code }, 401)
+      }
 
       context.set('auth', data)
       await next()

@@ -52,9 +52,15 @@
       "post": {
         "operationId": "createPasteRaw",
         "summary": "Create pastes from raw or multipart content",
-        "description": "Creates a paste from a raw body or up to 10 multipart entries. One multipart entry is stored directly by default; multiple entries are bundled into a ZIP. Uploads are limited to 25 MiB.",
+        "description": "Creates a paste from a raw body or up to 10 multipart entries. One multipart entry is stored directly by default; multiple entries are bundled into a ZIP. Public and multipart uploads are limited to 25 MiB. A valid API key raises the limit for raw, non-multipart uploads to 100 MB.",
         "tags": [
           "Pastes"
+        ],
+        "security": [
+          {},
+          {
+            "BearerAuth": []
+          }
         ],
         "parameters": [
           {
@@ -76,7 +82,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "Raw paste content or a multipart form containing up to 10 file or text entries. The entire encoded request is limited to 25 MiB.",
+          "description": "Raw paste content or a multipart form containing up to 10 file or text entries. Public and multipart requests are limited to 25 MiB. Authenticated raw, non-multipart requests are limited to 100 MB.",
           "content": {
             "text/plain": {
               "schema": {
@@ -98,6 +104,12 @@
               }
             },
             "image/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/*": {
               "schema": {
                 "type": "string",
                 "format": "binary"
@@ -137,6 +149,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           },
           "429": {
             "description": "Rate limit exceeded",
@@ -181,7 +199,7 @@
             }
           },
           "413": {
-            "description": "The encoded request body exceeds 25 MiB",
+            "description": "The encoded request body exceeds the applicable 25 MiB public/multipart or 100 MB authenticated raw limit",
             "content": {
               "application/json": {
                 "schema": {
@@ -193,10 +211,19 @@
                       "ok": false,
                       "error": "Payload exceeds 25 MiB limit"
                     }
+                  },
+                  "authenticatedTooLarge": {
+                    "value": {
+                      "ok": false,
+                      "error": "Payload exceeds 100 MB limit"
+                    }
                   }
                 }
               }
             }
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
           }
         }
       }
@@ -208,6 +235,12 @@
         "description": "Creates a new paste using the `content` query parameter. Supports optional base64 encoding and language tagging.",
         "tags": [
           "Pastes"
+        ],
+        "security": [
+          {},
+          {
+            "BearerAuth": []
+          }
         ],
         "parameters": [
           {
@@ -254,6 +287,12 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "429": {
             "$ref": "#/paths/~1/post/responses/429"
           },
@@ -274,6 +313,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
           }
         }
       }
@@ -548,6 +590,64 @@
     }
   },
   "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API key",
+        "description": "Unkey API key supplied as `Authorization: Bearer <api-key>`."
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "A supplied Authorization header is malformed or contains an invalid API key.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AuthenticationError"
+            },
+            "examples": {
+              "malformed": {
+                "value": {
+                  "error": "Invalid Authorization header"
+                }
+              },
+              "invalid": {
+                "value": {
+                  "error": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The API key lacks the required permission.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AuthenticationError"
+            },
+            "example": {
+              "error": "INSUFFICIENT_PERMISSIONS"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "The authentication or rate-limit service is unavailable.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AuthenticationError"
+            },
+            "example": {
+              "error": "Service unavailable"
+            }
+          }
+        }
+      }
+    },
     "parameters": {
       "PasteId": {
         "name": "id",
@@ -566,6 +666,18 @@
       }
     },
     "schemas": {
+      "AuthenticationError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Authentication or authorization failure code"
+          }
+        }
+      },
       "PasteMetadata": {
         "type": "object",
         "required": [

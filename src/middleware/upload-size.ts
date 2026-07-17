@@ -1,15 +1,30 @@
 import type { MiddlewareHandler } from 'hono'
 
-import { MAX_UPLOAD_SIZE } from '#main.tsx'
+export const MAX_PUBLIC_UPLOAD_SIZE = 25 * 1024 * 1024
+export const MAX_AUTHENTICATED_RAW_UPLOAD_SIZE = 100_000_000
 
 export const uploadSizeLimit: MiddlewareHandler = async (context, next) => {
+  const mediaType = context.req
+    .header('content-type')
+    ?.split(';')
+    .at(0)
+    ?.trim()
+    .toLowerCase()
+  const isAuthenticatedRaw =
+    context.get('auth') !== undefined && mediaType !== 'multipart/form-data'
+  const maxUploadSize = isAuthenticatedRaw
+    ? MAX_AUTHENTICATED_RAW_UPLOAD_SIZE
+    : MAX_PUBLIC_UPLOAD_SIZE
+  const limitLabel = isAuthenticatedRaw ? '100 MB' : '25 MiB'
   const contentLength = Number(context.req.header('content-length'))
 
-  if (Number.isFinite(contentLength) && contentLength > MAX_UPLOAD_SIZE)
+  if (Number.isFinite(contentLength) && contentLength > maxUploadSize)
     return context.json(
-      { ok: false, error: 'Payload exceeds 25 MiB limit' },
+      { ok: false, error: `Payload exceeds ${limitLabel} limit` },
       413
     )
+
+  if (isAuthenticatedRaw) return await next()
 
   const body = context.req.raw.body
   if (!body) return await next()
@@ -23,10 +38,10 @@ export const uploadSizeLimit: MiddlewareHandler = async (context, next) => {
     if (done) break
 
     size += value.byteLength
-    if (size > MAX_UPLOAD_SIZE) {
+    if (size > maxUploadSize) {
       await reader.cancel()
       return context.json(
-        { ok: false, error: 'Payload exceeds 25 MiB limit' },
+        { ok: false, error: `Payload exceeds ${limitLabel} limit` },
         413
       )
     }

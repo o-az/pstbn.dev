@@ -2,7 +2,6 @@ import * as z from 'zod/mini'
 import { ulid } from '@std/ulid'
 
 import { sniffFile } from '#utilities.ts'
-import { MAX_ARCHIVE_NAME_SIZE } from '#main.tsx'
 
 const PasteMetadataSchema = z.object({
   id: z.string(),
@@ -54,25 +53,60 @@ async function storePaste(
   }
 }
 
-export async function createPaste(
-  kv: KVNamespace,
-  r2: R2Bucket,
-  content: ArrayBuffer,
-  language: string | null,
+type CreatePasteArgs<Content extends ArrayBuffer | ReadableStream> = {
+  r2: R2Bucket
+  kv: KVNamespace
+  content: Content
+  language: string | null
   contentType?: string | null
+}
+
+export async function createPaste(
+  args: CreatePasteArgs<ArrayBuffer>
 ): Promise<PasteMetadata> {
-  const input = { content, language, contentType }
+  const { r2, kv, ...input } = args
   const metadata = preparePaste(input)
 
   await storePaste(kv, r2, input, metadata)
   return metadata
 }
 
-export async function createPastes(
-  kv: KVNamespace,
-  r2: R2Bucket,
+export async function createStreamedPaste<
+  Content extends ArrayBuffer | ReadableStream
+>(args: CreatePasteArgs<Content>): Promise<PasteMetadata | null> {
+  const id = ulid()
+
+  try {
+    const object = await args.r2.put(id, args.content)
+    if (!object) throw new Error('R2 upload failed')
+
+    if (object.size === 0) {
+      await args.r2.delete(id)
+      return null
+    }
+
+    const metadata = {
+      id,
+      size: object.size,
+      language: args.language,
+      createdAt: new Date().toISOString(),
+      contentType: args.contentType || undefined
+    }
+    await args.kv.put(id, JSON.stringify(metadata))
+    return metadata
+  } catch (error) {
+    await deletePastes(args.kv, args.r2, [id])
+    throw error
+  }
+}
+
+export async function createPastes(args: {
+  kv: KVNamespace
+  r2: R2Bucket
   inputs: Array<PasteInput>
-): Promise<Array<PasteMetadata>> {
+}): Promise<Array<PasteMetadata>> {
+  const { kv, r2, inputs } = args
+
   const pastes = inputs.map(input => ({ input, metadata: preparePaste(input) }))
   const results = await Promise.allSettled(
     pastes.map(({ input, metadata }) => storePaste(kv, r2, input, metadata))
@@ -91,18 +125,18 @@ export async function createPastes(
   return pastes.map(paste => paste.metadata)
 }
 
-export async function getPasteContent(
-  r2: R2Bucket,
+export async function getPasteContent(args: {
+  r2: R2Bucket
   id: string
-): Promise<R2ObjectBody | null> {
-  return await r2.get(id)
+}): Promise<R2ObjectBody | null> {
+  return await args.r2.get(args.id)
 }
 
-export async function getPasteMetadata(
-  kv: KVNamespace,
+export async function getPasteMetadata(args: {
+  kv: KVNamespace
   id: string
-): Promise<PasteMetadata | null> {
-  const raw = await kv.get(id)
+}): Promise<PasteMetadata | null> {
+  const raw = await args.kv.get(args.id)
   if (!raw) return null
   const { data, success, error } = PasteMetadataSchema.safeParse(
     JSON.parse(raw)
@@ -111,21 +145,24 @@ export async function getPasteMetadata(
   if (success) return data
 
   console.error(
-    `Failed to parse metadata for paste ${id} - ${z.prettifyError(error)}`
+    `Failed to parse metadata for paste ${args.id} - ${z.prettifyError(error)}`
   )
   return null
 }
 
-export async function listPastes(
-  kv: KVNamespace,
+export async function listPastes(args: {
+  kv: KVNamespace
   options?: { limit?: number; cursor?: string }
-): Promise<{ pastes: Array<PasteMetadata>; cursor: string | null }> {
-  const limit = options?.limit ?? 20
-  const result = await kv.list({ limit, cursor: options?.cursor ?? undefined })
+}): Promise<{ pastes: Array<PasteMetadata>; cursor: string | null }> {
+  const limit = args.options?.limit ?? 20
+  const result = await args.kv.list({
+    limit,
+    cursor: args.options?.cursor ?? undefined
+  })
 
   const pastes = await Promise.all(
     result.keys.map(async key => {
-      const raw = await kv.get(key.name)
+      const raw = await args.kv.get(key.name)
       if (!raw) return null
 
       return JSON.parse(raw)
@@ -140,12 +177,16 @@ export async function listPastes(
 
 export type FormEntry = [name: string, value: File | string]
 
+export const MAX_ARCHIVE_NAME_SIZE = 240
+
 /**
  * Keep archive entries recognizable and safe to extract. Strip path components
  * and control characters, then use the provided fallback for empty, reserved,
  * or oversized names.
  */
-function safeArchiveName(value: string, fallback: string): string {
+function safeArchiveName(args: { value: string; fallback: string }): string {
+  const { value, fallback } = args
+
   const basename = value.replaceAll('\\', '/').split('/').pop()
   const safe = Array.from(basename ?? '')
     .filter(character => {
@@ -199,14 +240,20 @@ export async function toMultipartEntries(
             value.type === 'application/octet-stream'
               ? undefined
               : value.type || undefined,
-          filename: safeArchiveName(value.name, `file-${index + 1}`)
+          filename: safeArchiveName({
+            value: value.name,
+            fallback: `file-${index + 1}`
+          })
         }
       }
 
       return {
         content: new TextEncoder().encode(value),
         contentType: 'text/plain; charset=utf-8',
-        filename: `${safeArchiveName(name, `field-${index + 1}`)}.txt`
+        filename: `${safeArchiveName({
+          value: name,
+          fallback: `field-${index + 1}`
+        })}.txt`
       }
     })
   )

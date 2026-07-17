@@ -1,13 +1,71 @@
 import { unzipSync } from 'fflate'
-import { describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { env, exports } from 'cloudflare:workers'
 
 import { createPastes } from '#storage.ts'
 import type { PasteMetadata } from '#storage.ts'
 
-async function upload(form: FormData, query = '') {
+const UNKEY_ORIGIN = 'https://api.unkey.com'
+let unkeyRequests: Array<{ pathname: string; body: unknown }>
+
+beforeEach(() => {
+  unkeyRequests = []
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const request = new Request(input, init)
+    const url = new URL(request.url)
+
+    if (url.origin !== UNKEY_ORIGIN || request.method !== 'POST')
+      throw new Error(`Unexpected outbound request: ${request.method} ${url}`)
+
+    if (url.pathname === '/v2/ratelimit.limit') {
+      const body = await request.json()
+      unkeyRequests.push({ pathname: url.pathname, body })
+      if ((body as { identifier?: string }).identifier === 'rate-limit-error')
+        throw new Error('Unkey unavailable')
+
+      return Response.json({
+        meta: { requestId: 'test-rate-limit' },
+        data: {
+          success: true,
+          limit: 10,
+          remaining: 9,
+          reset: Date.now() + 60_000
+        }
+      })
+    }
+
+    if (url.pathname === '/v2/keys.verifyKey') {
+      const body = (await request.json()) as { key: string }
+      unkeyRequests.push({ pathname: url.pathname, body })
+      const code =
+        body.key === 'rate-limited-key'
+          ? 'RATE_LIMITED'
+          : body.key === 'valid-key'
+            ? 'VALID'
+            : 'NOT_FOUND'
+
+      return Response.json({
+        meta: { requestId: 'test-key-verification' },
+        data: {
+          valid: code === 'VALID',
+          code,
+          keyId: code === 'NOT_FOUND' ? undefined : 'key_test'
+        }
+      })
+    }
+
+    throw new Error(`Unexpected Unkey endpoint: ${url.pathname}`)
+  })
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+async function upload(form: FormData, query = '', authorization?: string) {
   const response = await exports.default.fetch(`http://localhost/${query}`, {
     method: 'POST',
+    headers: authorization ? { Authorization: authorization } : undefined,
     body: form
   })
   const responseBody = await response.text()
@@ -37,6 +95,106 @@ function decode(content: ArrayBuffer | Uint8Array | undefined): string {
   if (content === undefined) throw new Error('Expected content was not found')
   return new TextDecoder().decode(content)
 }
+
+describe('API key authentication', () => {
+  test('allows public uploads and limits them by connecting IP', async () => {
+    const response = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      headers: { 'CF-Connecting-IP': '203.0.113.1' },
+      body: 'hello'
+    })
+
+    expect(response.status).toBe(201)
+    expect(unkeyRequests).toEqual([
+      {
+        pathname: '/v2/ratelimit.limit',
+        body: expect.objectContaining({ identifier: '203.0.113.1' })
+      }
+    ])
+  })
+
+  test('fails closed when the public rate limiter is unavailable', async () => {
+    const response = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      headers: { 'CF-Connecting-IP': 'rate-limit-error' },
+      body: 'hello'
+    })
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: 'Service unavailable' })
+  })
+
+  test('rejects a malformed Authorization header without contacting Unkey', async () => {
+    const response = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      headers: { Authorization: 'Basic valid-key' },
+      body: 'hello'
+    })
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({
+      error: 'Invalid Authorization header'
+    })
+    expect(unkeyRequests).toEqual([])
+  })
+
+  test('rejects an invalid API key', async () => {
+    const response = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer invalid-key' },
+      body: 'hello'
+    })
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: 'NOT_FOUND' })
+    expect(unkeyRequests.map(request => request.pathname)).toEqual([
+      '/v2/keys.verifyKey'
+    ])
+  })
+
+  test('uses only the key-attached limit for a valid API key', async () => {
+    const response = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer valid-key' },
+      body: 'hello'
+    })
+
+    expect(response.status).toBe(201)
+    const pasteResponse = await exports.default.fetch(
+      (await response.text()).trim()
+    )
+    expect(await pasteResponse.text()).toBe('hello')
+    expect(unkeyRequests.map(request => request.pathname)).toEqual([
+      '/v2/keys.verifyKey'
+    ])
+  })
+
+  test('returns the key-attached rate limit response', async () => {
+    const response = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer rate-limited-key' },
+      body: 'hello'
+    })
+
+    expect(response.status).toBe(429)
+    expect(await response.json()).toEqual({ error: 'RATE_LIMITED' })
+  })
+
+  test('keeps paste retrieval public and unmetered', async () => {
+    const uploadResponse = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      body: 'shared paste'
+    })
+    const pasteUrl = await uploadResponse.text()
+    unkeyRequests = []
+
+    const response = await exports.default.fetch(pasteUrl.trim())
+
+    expect(response.status).toBe(200)
+    expect(await response.text()).toBe('shared paste')
+    expect(unkeyRequests).toEqual([])
+  })
+})
 
 describe('multipart uploads', () => {
   test('stores one entry directly by default', async () => {
@@ -145,6 +303,50 @@ describe('multipart uploads', () => {
     expect(await response.text()).toContain('Payload exceeds 25 MiB limit')
   })
 
+  test('allows authenticated uploads over the public size limit', async () => {
+    const response = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer valid-key',
+        'Content-Length': String(25 * 1024 * 1024 + 1)
+      },
+      body: 'authenticated upload'
+    })
+
+    expect(response.status).toBe(201)
+  })
+
+  test('enforces the authenticated size limit', async () => {
+    const response = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer valid-key',
+        'Content-Length': String(100_000_001)
+      },
+      body: 'authenticated upload'
+    })
+
+    expect(response.status).toBe(413)
+    expect(await response.text()).toContain('Payload exceeds 100 MB limit')
+  })
+
+  test('keeps authenticated multipart uploads at the 25 MiB limit', async () => {
+    const form = new FormData()
+    form.append('file', new Blob(['hello']), 'hello.txt')
+
+    const response = await exports.default.fetch('http://localhost/', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer valid-key',
+        'Content-Length': String(25 * 1024 * 1024 + 1)
+      },
+      body: form
+    })
+
+    expect(response.status).toBe(413)
+    expect(await response.text()).toContain('Payload exceeds 25 MiB limit')
+  })
+
   test('cleans up every paste when a split storage write fails', async () => {
     const metadata = new Set<string>()
     const contents = new Set<string>()
@@ -170,10 +372,14 @@ describe('multipart uploads', () => {
     } as unknown as R2Bucket
 
     await expect(
-      createPastes(kv, r2, [
-        { content: new TextEncoder().encode('one').buffer, language: null },
-        { content: new TextEncoder().encode('two').buffer, language: null }
-      ])
+      createPastes({
+        kv,
+        r2,
+        inputs: [
+          { content: new TextEncoder().encode('one').buffer, language: null },
+          { content: new TextEncoder().encode('two').buffer, language: null }
+        ]
+      })
     ).rejects.toThrow('metadata write failed')
 
     expect({ contents: contents.size, metadata: metadata.size }).toEqual({

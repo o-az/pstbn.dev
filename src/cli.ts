@@ -78,12 +78,12 @@ export const cli = Cli.create('pstbn', {
             retryable: false
           })
 
-        const paste = await createPaste(
+        const paste = await createPaste({
           kv,
           r2,
-          new TextEncoder().encode(content).buffer,
-          context.options.language ?? null
-        )
+          language: context.options.language ?? null,
+          content: new TextEncoder().encode(content).buffer
+        })
         return context.ok(
           { ...paste, url: `/${paste.id}` },
           {
@@ -178,7 +178,10 @@ export const cli = Cli.create('pstbn', {
 
       if (context.options.meta) {
         if (kv) {
-          const metadata = await getPasteMetadata(kv, context.args.id)
+          const metadata = await getPasteMetadata({
+            kv,
+            id: context.args.id
+          })
           if (!metadata)
             return context.error({
               code: 'NOT_FOUND',
@@ -202,7 +205,10 @@ export const cli = Cli.create('pstbn', {
       }
 
       if (r2) {
-        const object = await getPasteContent(r2, context.args.id)
+        const object = await getPasteContent({
+          id: context.args.id,
+          r2
+        })
         if (!object)
           return context.error({
             code: 'NOT_FOUND',
@@ -250,9 +256,12 @@ export const cli = Cli.create('pstbn', {
     run: async context => {
       const { kv } = context.var
       if (kv)
-        return await listPastes(kv, {
-          limit: context.options.limit,
-          cursor: context.options.cursor
+        return await listPastes({
+          kv,
+          options: {
+            limit: context.options.limit,
+            cursor: context.options.cursor
+          }
         })
 
       const params = new URLSearchParams({
