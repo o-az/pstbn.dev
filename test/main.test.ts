@@ -101,7 +101,10 @@ describe('metadata routes', () => {
     const response = await exports.default.fetch('http://localhost/status')
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ ok: true })
+    expect(await response.json()).toEqual({
+      ok: true,
+      commitSha: 'abc1234'
+    })
   })
 })
 

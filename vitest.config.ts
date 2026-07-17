@@ -28,6 +28,9 @@ export default defineConfig(config => {
           configPath: './wrangler.json'
         },
         miniflare: {
+          bindings: {
+            COMMIT_SHA: 'abc1234'
+          },
           compatibilityFlags: [
             ...wranglerJSON.compatibility_flags,
             'enable_nodejs_fs_module',
